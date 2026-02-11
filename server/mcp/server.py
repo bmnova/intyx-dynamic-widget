@@ -12,6 +12,7 @@ from mcp.types import Resource, TextContent, Tool
 
 from server import firebase_client as fb
 from server.ai.gemini_client import GeminiClient, WIDGET_CATALOG
+from server.models import ColorPalette
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,10 @@ async def list_tools() -> list[Tool]:
                     "type": {"type": "string", "description": "Widget type from catalog"},
                     "params": {"type": "object", "description": "Widget parameters"},
                     "common": {"type": "object", "description": "Common params (priority, ttl, layout, etc.)"},
+                    "color_palette": {
+                        "type": "object",
+                        "description": "Host app color palette (primary, secondary, background, surface, etc.)",
+                    },
                 },
                 "required": ["type", "params"],
             },
@@ -124,11 +129,16 @@ async def list_tools() -> list[Tool]:
 @server.call_tool()
 async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     if name == "create_widget":
-        widget_id = fb.create_widget({
+        payload: dict[str, Any] = {
             "type": arguments["type"],
             "params": arguments["params"],
             "common": arguments.get("common", {}),
-        })
+        }
+        # Merge color_palette into common params for storage
+        if "color_palette" in arguments and arguments["color_palette"]:
+            palette = ColorPalette.from_dict(arguments["color_palette"])
+            payload["common"]["color_palette"] = palette.to_dict()
+        widget_id = fb.create_widget(payload)
         return [TextContent(type="text", text=json.dumps({"id": widget_id, "status": "created"}))]
 
     elif name == "list_widgets":

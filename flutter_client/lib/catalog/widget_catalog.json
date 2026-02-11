@@ -120,7 +120,28 @@
     "dismissible":    { "type": "bool",   "default": true,  "description": "Kapatilabilir mi?" },
     "priority":       { "type": "int",    "default": 0,     "description": "Gosterim onceligi (yuksek = once)" },
     "ttl_seconds":    { "type": "int",    "default": null,  "description": "Yasam suresi (null = sinirsiz)" },
-    "theme_override": { "type": "object", "default": null,  "description": "Ozel tema (bg_color, text_color, border_radius)" },
+    "theme_override": { "type": "object", "default": null,  "description": "Ozel tema (bg_color, text_color, border_radius) — color_palette varsa oncelikli olarak kullanilir" },
+    "color_palette": {
+      "type": "object",
+      "default": null,
+      "description": "Host uygulamanin renk paletini widget'a aktarir. Material Design renk sistemi kullanir.",
+      "properties": {
+        "primary":           { "type": "string", "default": "#6200EE", "description": "Ana renk (butonlar, vurgular)" },
+        "primary_variant":   { "type": "string", "default": "#3700B3", "description": "Ana renk varyanti (koyu ton)" },
+        "secondary":         { "type": "string", "default": "#03DAC6", "description": "Ikincil renk (aksan, FAB)" },
+        "secondary_variant": { "type": "string", "default": "#018786", "description": "Ikincil renk varyanti" },
+        "background":        { "type": "string", "default": "#FFFFFF", "description": "Arka plan rengi" },
+        "surface":           { "type": "string", "default": "#FFFFFF", "description": "Kart/yuzey rengi" },
+        "error":             { "type": "string", "default": "#B00020", "description": "Hata rengi" },
+        "on_primary":        { "type": "string", "default": "#FFFFFF", "description": "Primary uzerindeki metin/ikon rengi" },
+        "on_secondary":      { "type": "string", "default": "#000000", "description": "Secondary uzerindeki metin/ikon rengi" },
+        "on_background":     { "type": "string", "default": "#000000", "description": "Background uzerindeki metin rengi" },
+        "on_surface":        { "type": "string", "default": "#000000", "description": "Surface uzerindeki metin rengi" },
+        "on_error":          { "type": "string", "default": "#FFFFFF", "description": "Error uzerindeki metin rengi" },
+        "border_radius":     { "type": "double", "default": 12.0, "description": "Kose yuvarlatma (px)" },
+        "elevation":         { "type": "double", "default": 2.0,  "description": "Golge yuksekligi" }
+      }
+    },
     "layout": {
       "type": "object",
       "default": null,

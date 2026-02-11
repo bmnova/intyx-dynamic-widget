@@ -5,7 +5,7 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, request
 
 from server import firebase_client as fb
-from server.models import TriggerContext, WeatherCondition, WeatherData
+from server.models import ColorPalette, TriggerContext, WeatherCondition, WeatherData
 from server.triggers.conditions import (
     DeveloperParamCondition,
     SeasonalCondition,
@@ -52,6 +52,12 @@ def create_widget():
     missing = [f for f in required if f not in data]
     if missing:
         return jsonify({"error": f"Missing fields: {missing}"}), 400
+
+    # Normalize color_palette into common params if provided
+    if "color_palette" in data and data["color_palette"]:
+        palette = ColorPalette.from_dict(data["color_palette"])
+        common = data.setdefault("common", {})
+        common["color_palette"] = palette.to_dict()
 
     widget_id = fb.create_widget(data)
     return jsonify({"id": widget_id, "message": "Widget created"}), 201

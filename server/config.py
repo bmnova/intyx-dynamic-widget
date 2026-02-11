@@ -11,6 +11,10 @@ WEATHER_POLL_INTERVAL = int(os.environ.get("WEATHER_POLL_INTERVAL", "300"))
 NEWS_POLL_INTERVAL = int(os.environ.get("NEWS_POLL_INTERVAL", "600"))
 HOROSCOPE_POLL_INTERVAL = int(os.environ.get("HOROSCOPE_POLL_INTERVAL", "3600"))
 
+# Weather API
+OPENWEATHER_API_KEY = os.environ.get("OPENWEATHER_API_KEY", "")
+OPENWEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5"
+
 # Server
 HOST = os.environ.get("HOST", "0.0.0.0")
 PORT = int(os.environ.get("PORT", "8080"))

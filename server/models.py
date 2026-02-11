@@ -45,6 +45,51 @@ class HoroscopeData:
     mood: str
 
 
+# --- Color Palette ---
+
+
+@dataclass
+class ColorPalette:
+    """Color palette that widgets use to match the host app's design system."""
+
+    primary: str = "#6200EE"
+    primary_variant: str = "#3700B3"
+    secondary: str = "#03DAC6"
+    secondary_variant: str = "#018786"
+    background: str = "#FFFFFF"
+    surface: str = "#FFFFFF"
+    error: str = "#B00020"
+    on_primary: str = "#FFFFFF"
+    on_secondary: str = "#000000"
+    on_background: str = "#000000"
+    on_surface: str = "#000000"
+    on_error: str = "#FFFFFF"
+    border_radius: float = 12.0
+    elevation: float = 2.0
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "primary": self.primary,
+            "primary_variant": self.primary_variant,
+            "secondary": self.secondary,
+            "secondary_variant": self.secondary_variant,
+            "background": self.background,
+            "surface": self.surface,
+            "error": self.error,
+            "on_primary": self.on_primary,
+            "on_secondary": self.on_secondary,
+            "on_background": self.on_background,
+            "on_surface": self.on_surface,
+            "on_error": self.on_error,
+            "border_radius": self.border_radius,
+            "elevation": self.elevation,
+        }
+
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> ColorPalette:
+        return ColorPalette(**{k: v for k, v in data.items() if k in ColorPalette.__dataclass_fields__})
+
+
 # --- Widget Models ---
 
 class WidgetActionType(Enum):

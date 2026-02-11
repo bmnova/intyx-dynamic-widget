@@ -75,6 +75,9 @@ hangi widget'larin gosterilmesi gerektigine karar verirsin.
 Mevcut widget katalogu:
 {catalog}
 
+Eger context icinde color_palette varsa, widget'larin common alanina aynen ekle.
+Bu sayede widget'lar host uygulamanin renk temasina uyumlu gorunur.
+
 Yanit olarak SADECE gecerli JSON dondur, baska bir sey yazma.
 JSON formati:
 {{
@@ -86,7 +89,8 @@ JSON formati:
       "common": {{
         "dismissible": true,
         "priority": 10,
-        "ttl_seconds": 3600
+        "ttl_seconds": 3600,
+        "color_palette": {{ ... }}
       }}
     }}
   ]
