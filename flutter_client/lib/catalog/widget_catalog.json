@@ -1,0 +1,140 @@
+{
+  "catalog_version": "1.0.0",
+  "widgets": [
+    {
+      "type": "title_subtitle_image",
+      "description": "Baslik, alt baslik ve resim iceren kart",
+      "params": {
+        "title":      { "type": "string", "required": true,  "description": "Ana baslik" },
+        "subtitle":   { "type": "string", "required": false, "description": "Alt baslik" },
+        "image_url":  { "type": "string", "required": true,  "description": "Resim URL" },
+        "image_fit":  { "type": "enum",   "values": ["cover","contain","fill"], "default": "cover" }
+      }
+    },
+    {
+      "type": "clickable_image_link",
+      "description": "Tiklanabilir resim, baslik ve yonlendirme linki",
+      "params": {
+        "title":      { "type": "string", "required": true },
+        "image_url":  { "type": "string", "required": true },
+        "link_url":   { "type": "string", "required": true,  "description": "Tiklaninca acilacak URL" },
+        "link_text":  { "type": "string", "required": false, "description": "Link gosterim metni" }
+      }
+    },
+    {
+      "type": "hero_image",
+      "description": "Tam genislikte hero resim, overlay baslik ve CTA butonu",
+      "params": {
+        "title":        { "type": "string", "required": true },
+        "image_url":    { "type": "string", "required": true },
+        "button_text":  { "type": "string", "required": false },
+        "button_action":{ "type": "string", "required": false, "description": "deep_link veya URL" }
+      }
+    },
+    {
+      "type": "icon_text_action",
+      "description": "Ikon, baslik, aciklama ve aksiyon butonu",
+      "params": {
+        "icon":         { "type": "string", "required": true,  "description": "Material icon adi" },
+        "title":        { "type": "string", "required": true },
+        "description":  { "type": "string", "required": false },
+        "action_text":  { "type": "string", "required": false },
+        "action_url":   { "type": "string", "required": false }
+      }
+    },
+    {
+      "type": "countdown_banner",
+      "description": "Geri sayim zamanlayici ile kampanya banner'i",
+      "params": {
+        "title":       { "type": "string",   "required": true },
+        "end_time":    { "type": "datetime", "required": true, "description": "ISO 8601 bitis zamani" },
+        "button_text": { "type": "string",   "required": false },
+        "button_action":{ "type": "string",  "required": false }
+      }
+    },
+    {
+      "type": "carousel",
+      "description": "Yatay kaydirmali coklu icerik karti",
+      "params": {
+        "title":  { "type": "string", "required": false },
+        "items":  {
+          "type": "array",
+          "required": true,
+          "item_params": {
+            "image_url":   { "type": "string", "required": true },
+            "title":       { "type": "string", "required": false },
+            "description": { "type": "string", "required": false },
+            "link_url":    { "type": "string", "required": false }
+          }
+        }
+      }
+    },
+    {
+      "type": "promotional",
+      "description": "Kampanya/promosyon karti - ozel tasarim",
+      "params": {
+        "title":        { "type": "string", "required": true },
+        "description":  { "type": "string", "required": false },
+        "image_url":    { "type": "string", "required": false },
+        "badge_text":   { "type": "string", "required": false, "description": "Rozet metni (orn: %50 Indirim)" },
+        "action_url":   { "type": "string", "required": false }
+      }
+    },
+    {
+      "type": "contextual",
+      "description": "Baglamsal bilgi karti (hava durumu, burc vs.)",
+      "params": {
+        "title":       { "type": "string", "required": true },
+        "content":     { "type": "string", "required": true },
+        "icon":        { "type": "string", "required": false },
+        "source":      { "type": "string", "required": false, "description": "Veri kaynagi etiketi" }
+      }
+    },
+    {
+      "type": "informational",
+      "description": "Bilgilendirme/duyuru karti",
+      "params": {
+        "title":       { "type": "string", "required": true },
+        "message":     { "type": "string", "required": true },
+        "severity":    { "type": "enum", "values": ["info","warning","success","error"], "default": "info" }
+      }
+    },
+    {
+      "type": "functional",
+      "description": "Aksiyon odakli kart - buton(lar) ve form alanlari",
+      "params": {
+        "title":   { "type": "string", "required": true },
+        "actions": {
+          "type": "array",
+          "required": true,
+          "item_params": {
+            "label":  { "type": "string", "required": true },
+            "action": { "type": "string", "required": true, "description": "deep_link, URL veya callback_id" },
+            "style":  { "type": "enum", "values": ["primary","secondary","text"], "default": "primary" }
+          }
+        }
+      }
+    }
+  ],
+  "common_params": {
+    "dismissible":    { "type": "bool",   "default": true,  "description": "Kapatilabilir mi?" },
+    "priority":       { "type": "int",    "default": 0,     "description": "Gosterim onceligi (yuksek = once)" },
+    "ttl_seconds":    { "type": "int",    "default": null,  "description": "Yasam suresi (null = sinirsiz)" },
+    "theme_override": { "type": "object", "default": null,  "description": "Ozel tema (bg_color, text_color, border_radius)" },
+    "layout": {
+      "type": "object",
+      "default": null,
+      "description": "Boyut ve yerlesim ayarlari",
+      "properties": {
+        "width":       { "type": "double", "default": null, "description": "Sabit genislik (null = expand)" },
+        "height":      { "type": "double", "default": null, "description": "Sabit yukseklik (null = intrinsic)" },
+        "max_width":   { "type": "double", "default": null, "description": "Maksimum genislik" },
+        "max_height":  { "type": "double", "default": null, "description": "Maksimum yukseklik" },
+        "padding":     { "type": "edge_insets", "default": null, "description": "Ic bosluk [top, right, bottom, left] veya tek deger" },
+        "margin":      { "type": "edge_insets", "default": null, "description": "Dis bosluk [top, right, bottom, left] veya tek deger" },
+        "expand":      { "type": "bool",   "default": true,  "description": "Bulundugu alana yayilsin mi?" },
+        "aspect_ratio":{ "type": "double", "default": null, "description": "En-boy orani (orn: 16/9 = 1.78)" }
+      }
+    }
+  }
+}
