@@ -4,12 +4,28 @@ import '../core/widget_resolver.dart';
 import '../models/widget_response.dart';
 
 /// Main container that renders a list of widgets from agent JSON response.
+///
+/// Developer places this widget in the app and optionally passes the host
+/// app's [ColorScheme] so that dynamic widgets blend with the host design.
+///
+/// ```dart
+/// DynamicWidgetContainer(
+///   responseJson: agentResponse,
+///   colorScheme: Theme.of(context).colorScheme,
+///   padding: EdgeInsets.all(12),
+/// )
+/// ```
 class DynamicWidgetContainer extends StatelessWidget {
   /// Agent response JSON containing widgets array.
   final Map<String, dynamic>? responseJson;
 
   /// Pre-parsed widget entries (alternative to responseJson).
   final List<WidgetEntry>? entries;
+
+  /// Host app's color scheme. When provided, widgets render using these
+  /// colors instead of the default theme. This is the primary way for
+  /// developers to make dynamic widgets match their app's look and feel.
+  final ColorScheme? colorScheme;
 
   /// Called when a widget is dismissed.
   final OnWidgetDismiss? onDismiss;
@@ -30,6 +46,7 @@ class DynamicWidgetContainer extends StatelessWidget {
     super.key,
     this.responseJson,
     this.entries,
+    this.colorScheme,
     this.onDismiss,
     this.onAction,
     this.spacing = 8,
@@ -47,12 +64,14 @@ class DynamicWidgetContainer extends StatelessWidget {
     if (entries != null) {
       widgets = WidgetResolver.resolveEntries(
         entries!,
+        hostColorScheme: colorScheme,
         onDismiss: onDismiss,
         onAction: onAction,
       );
     } else {
       widgets = WidgetResolver.resolve(
         responseJson!,
+        hostColorScheme: colorScheme,
         onDismiss: onDismiss,
         onAction: onAction,
       );
@@ -68,20 +87,32 @@ class DynamicWidgetContainer extends StatelessWidget {
       }
     }
 
+    Widget result;
     if (scrollable) {
-      return ListView(
+      result = ListView(
         padding: padding,
         shrinkWrap: true,
         children: children,
       );
+    } else {
+      result = Padding(
+        padding: padding,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: children,
+        ),
+      );
     }
 
-    return Padding(
-      padding: padding,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: children,
-      ),
-    );
+    // Wrap in host app's color scheme if provided
+    if (colorScheme != null) {
+      final baseTheme = Theme.of(context);
+      result = Theme(
+        data: baseTheme.copyWith(colorScheme: colorScheme),
+        child: result,
+      );
+    }
+
+    return result;
   }
 }

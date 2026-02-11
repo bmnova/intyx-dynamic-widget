@@ -3,6 +3,8 @@ library;
 
 import 'dart:ui';
 
+import 'package:flutter/material.dart' show ColorScheme, Brightness;
+
 /// Layout configuration for responsive widget sizing.
 class LayoutConfig {
   final double? width;
@@ -100,6 +102,38 @@ class ThemeOverride {
   }
 }
 
+/// Parses a color_palette JSON map into a Flutter [ColorScheme].
+ColorScheme? parseColorSchemeFromJson(Map<String, dynamic>? json) {
+  if (json == null) return null;
+  Color? p(String key) => ThemeOverride._parseColor(json[key]);
+
+  final primary = p('primary') ?? const Color(0xFF6200EE);
+  final secondary = p('secondary') ?? const Color(0xFF03DAC6);
+  final surface = p('surface') ?? const Color(0xFFFFFFFF);
+  final background = p('background') ?? const Color(0xFFFFFFFF);
+  final error = p('error') ?? const Color(0xFFB00020);
+  final onPrimary = p('on_primary') ?? const Color(0xFFFFFFFF);
+  final onSecondary = p('on_secondary') ?? const Color(0xFF000000);
+  final onSurface = p('on_surface') ?? const Color(0xFF000000);
+  final onError = p('on_error') ?? const Color(0xFFFFFFFF);
+
+  // Determine brightness from background luminance
+  final brightness =
+      background.computeLuminance() > 0.5 ? Brightness.light : Brightness.dark;
+
+  return ColorScheme(
+    brightness: brightness,
+    primary: primary,
+    onPrimary: onPrimary,
+    secondary: secondary,
+    onSecondary: onSecondary,
+    error: error,
+    onError: onError,
+    surface: surface,
+    onSurface: onSurface,
+  );
+}
+
 /// Common parameters shared by all widget types.
 class CommonParams {
   final bool dismissible;
@@ -108,12 +142,16 @@ class CommonParams {
   final ThemeOverride? themeOverride;
   final LayoutConfig? layout;
 
+  /// Color scheme parsed from the agent's `color_palette` field.
+  final ColorScheme? colorScheme;
+
   const CommonParams({
     this.dismissible = true,
     this.priority = 0,
     this.ttlSeconds,
     this.themeOverride,
     this.layout,
+    this.colorScheme,
   });
 
   factory CommonParams.fromJson(Map<String, dynamic> json) {
@@ -127,6 +165,9 @@ class CommonParams {
       layout: json['layout'] != null
           ? LayoutConfig.fromJson(json['layout'] as Map<String, dynamic>)
           : null,
+      colorScheme: parseColorSchemeFromJson(
+        json['color_palette'] as Map<String, dynamic>?,
+      ),
     );
   }
 }

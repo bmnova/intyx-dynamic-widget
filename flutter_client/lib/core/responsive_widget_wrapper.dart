@@ -1,4 +1,4 @@
-/// Responsive wrapper that applies layout constraints from JSON config.
+/// Responsive wrapper that applies layout constraints and color scheme.
 library;
 
 import 'package:flutter/material.dart';
@@ -8,18 +8,35 @@ import '../models/widget_response.dart';
 class ResponsiveWidgetWrapper extends StatelessWidget {
   final LayoutConfig? layout;
   final ThemeOverride? themeOverride;
+
+  /// When non-null, overrides the ambient [ColorScheme] for all child widgets.
+  /// This makes `Theme.of(context).colorScheme` return these colors inside
+  /// the child tree, so every widget automatically adapts.
+  final ColorScheme? colorScheme;
+
   final Widget child;
 
   const ResponsiveWidgetWrapper({
     super.key,
     this.layout,
     this.themeOverride,
+    this.colorScheme,
     required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
     Widget result = child;
+
+    // Apply color scheme — wraps child in a Theme so that all descendants
+    // using Theme.of(context).colorScheme pick up the host app's colors.
+    if (colorScheme != null) {
+      final baseTheme = Theme.of(context);
+      result = Theme(
+        data: baseTheme.copyWith(colorScheme: colorScheme),
+        child: result,
+      );
+    }
 
     // Apply theme override (background, border radius)
     if (themeOverride != null) {
