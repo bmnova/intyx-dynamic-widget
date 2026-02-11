@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "intyx-dynamic-widget": {
+      "command": "python",
+      "args": ["-m", "server.mcp"],
+      "cwd": "/path/to/intyx-dynamic-widget",
+      "env": {
+        "FIREBASE_PROJECT_ID": "your-project-id",
+        "FIREBASE_CREDENTIALS_PATH": "/path/to/credentials.json",
+        "GEMINI_API_KEY": "your-gemini-api-key"
+      }
+    }
+  }
+}
