@@ -213,7 +213,22 @@ Agent'in gorebilecegi, tum widget tiplerini ve parametrelerini tanimlayan JSON s
     "dismissible":    { "type": "bool",   "default": true,  "description": "Kapatilabilir mi?" },
     "priority":       { "type": "int",    "default": 0,     "description": "Gosterim onceligi (yuksek = once)" },
     "ttl_seconds":    { "type": "int",    "default": null,  "description": "Yasam suresi (null = sinirsiz)" },
-    "theme_override": { "type": "object", "default": null,  "description": "Ozel tema (bg_color, text_color, border_radius)" }
+    "theme_override": { "type": "object", "default": null,  "description": "Ozel tema (bg_color, text_color, border_radius)" },
+    "layout": {
+      "type": "object",
+      "default": null,
+      "description": "Boyut ve yerlesim ayarlari",
+      "properties": {
+        "width":       { "type": "double", "default": null, "description": "Sabit genislik (null = expand)" },
+        "height":      { "type": "double", "default": null, "description": "Sabit yukseklik (null = intrinsic)" },
+        "max_width":   { "type": "double", "default": null, "description": "Maksimum genislik" },
+        "max_height":  { "type": "double", "default": null, "description": "Maksimum yukseklik" },
+        "padding":     { "type": "edge_insets", "default": null, "description": "Ic bosluk [top, right, bottom, left] veya tek deger" },
+        "margin":      { "type": "edge_insets", "default": null, "description": "Dis bosluk [top, right, bottom, left] veya tek deger" },
+        "expand":      { "type": "bool",   "default": true,  "description": "Bulundugu alana yayilsin mi?" },
+        "aspect_ratio":{ "type": "double", "default": null, "description": "En-boy orani (orn: 16/9 = 1.78)" }
+      }
+    }
   }
 }
 ```
@@ -253,6 +268,45 @@ Agent su formatta response doner:
     }
   ]
 }
+```
+
+#### Responsive & Layout Davranisi
+
+Tum widget'lar varsayilan olarak **responsive** calisir:
+
+- **Expand modu (varsayilan):** `expand: true` - Widget bulundugu parent'in genisligine yayilir. Yukseklik icerige gore (intrinsic).
+- **Sabit boyut modu:** `width` ve/veya `height` verilirse o boyutlara sabitlenir.
+- **Constrained modu:** `max_width` / `max_height` ile sinirlanir ama icerige gore kuculebilir.
+- **Aspect ratio modu:** `aspect_ratio` verilirse genislige gore yukseklik otomatik hesaplanir.
+
+```dart
+// Flutter tarafinda her widget su wrapper ile sarilir:
+class ResponsiveWidgetWrapper extends StatelessWidget {
+  final LayoutConfig? layout;  // common_params.layout'tan gelir
+  final Widget child;
+
+  // layout null -> ConstrainedBox(maxWidth: double.infinity) + intrinsic height
+  // layout.expand true -> SizedBox(width: double.infinity)
+  // layout.width/height set -> SizedBox(width: w, height: h)
+  // layout.padding set -> Padding(padding: ...)
+  // layout.margin set -> Container(margin: ...)
+  // layout.aspect_ratio set -> AspectRatio(aspectRatio: ...)
+}
+```
+
+**Ornek agent response'lari:**
+```json
+// Tam genislik, icerige gore yukseklik (varsayilan)
+{ "type": "title_subtitle_image", "params": {...} }
+
+// Sabit boyut
+{ "type": "hero_image", "params": {...}, "common": { "layout": { "width": 350, "height": 200 } } }
+
+// Padding ile expand
+{ "type": "icon_text_action", "params": {...}, "common": { "layout": { "padding": [16, 16, 16, 16] } } }
+
+// Max genislik + aspect ratio
+{ "type": "carousel", "params": {...}, "common": { "layout": { "max_width": 600, "aspect_ratio": 1.78 } } }
 ```
 
 #### Widget Registry & Resolver (`lib/core/`)
@@ -419,9 +473,10 @@ intyx-dynamic-widget/
     │   ├── catalog/
     │   │   └── widget_catalog.json     # Widget catalog - agent bunu gorur
     │   ├── core/
-    │   │   ├── widget_registry.dart    # type -> Widget eslestirme
-    │   │   ├── widget_resolver.dart    # JSON -> Widget listesi
-    │   │   └── catalog_provider.dart   # Catalog JSON okuma/sunma
+    │   │   ├── widget_registry.dart          # type -> Widget eslestirme
+    │   │   ├── widget_resolver.dart          # JSON -> Widget listesi
+    │   │   ├── catalog_provider.dart         # Catalog JSON okuma/sunma
+    │   │   └── responsive_widget_wrapper.dart # Layout/boyut/padding wrapper
     │   ├── models/
     │   │   ├── widget_definition.dart
     │   │   ├── widget_response.dart    # Agent JSON response modeli
