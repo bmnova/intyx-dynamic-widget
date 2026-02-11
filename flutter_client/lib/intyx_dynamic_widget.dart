@@ -7,6 +7,7 @@ library intyx_dynamic_widget;
 
 // Core
 export 'core/catalog_provider.dart';
+export 'core/intyx_init.dart';
 export 'core/responsive_widget_wrapper.dart';
 export 'core/widget_registry.dart';
 export 'core/widget_resolver.dart';
