@@ -91,12 +91,77 @@
 - `firebase_service.dart` - Firestore realtime listener'lar
 
 ### 4.4 Hazir Widget'lar (`lib/widgets/`)
-- `DynamicWidgetContainer` - Ana wrapper, widget listesini gosterir
+
+#### A) Dinamik/Trigger Widget'lari
+- `DynamicWidgetContainer` - Ana wrapper, widget listesini yonetir ve gosterir
 - `PromotionalWidget` - Kampanya/promosyon karti
 - `ContextualWidget` - Baglamsal bilgi karti (hava, burc vs.)
 - `InformationalWidget` - Bilgilendirme/duyuru karti
 - `FunctionalWidget` - Aksiyon odakli kart (buton, form vs.)
 - Her widget: dismiss, interact callback'leri, animasyon
+
+#### B) Genel Amacli UI Widget'lari (`lib/widgets/ui/`)
+Bagimsiz kullanilabilir, hazir UI bileşenleri:
+
+- **`TitleSubtitleImageCard`** - Baslik + alt baslik + resim
+  ```
+  ┌─────────────────────┐
+  │  [  Resim  ]        │
+  │  Baslik              │
+  │  Alt baslik          │
+  └─────────────────────┘
+  ```
+
+- **`ClickableImageLinkCard`** - Baslik + tiklanabilir resim + link
+  ```
+  ┌─────────────────────┐
+  │  Baslik              │
+  │  [ Tiklanabilir Img ]│
+  │  🔗 Link metni       │
+  └─────────────────────┘
+  ```
+
+- **`HeroImageCard`** - Tam genislikte hero resim + overlay baslik
+  ```
+  ┌─────────────────────┐
+  │                      │
+  │   [ Hero Image ]     │
+  │      Baslik          │
+  │      Buton           │
+  └─────────────────────┘
+  ```
+
+- **`IconTextActionCard`** - Ikon + metin + aksiyon butonu
+  ```
+  ┌─────────────────────┐
+  │  🎯  Baslik     [>] │
+  │      Aciklama        │
+  └─────────────────────┘
+  ```
+
+- **`CountdownBannerCard`** - Geri sayim + kampanya banner'i
+  ```
+  ┌─────────────────────┐
+  │  ⏰ 02:15:30         │
+  │  Kampanya basligi    │
+  │  [ Katil ]           │
+  └─────────────────────┘
+  ```
+
+- **`CarouselCard`** - Yatay kaydirmali coklu icerik karti
+  ```
+  ┌─────────────────────┐
+  │  ◄ [Img1][Img2] ►   │
+  │  Baslik              │
+  │  Aciklama            │
+  └─────────────────────┘
+  ```
+
+Tum UI widget'lari:
+- Tema destegi (light/dark)
+- Konfigurasyon ile ozellestirilebilir (renkler, border radius, padding)
+- onTap, onDismiss, onAction callback'leri
+- Backend'den gelen JSON ile dinamik olarak olusturulabilir
 
 ### 4.5 Kullanim Ornegi (`example/`)
 - Ornek Flutter uygulamasi
@@ -162,7 +227,14 @@ intyx-dynamic-widget/
     │       ├── promotional_widget.dart
     │       ├── contextual_widget.dart
     │       ├── informational_widget.dart
-    │       └── functional_widget.dart
+    │       ├── functional_widget.dart
+    │       └── ui/
+    │           ├── title_subtitle_image_card.dart
+    │           ├── clickable_image_link_card.dart
+    │           ├── hero_image_card.dart
+    │           ├── icon_text_action_card.dart
+    │           ├── countdown_banner_card.dart
+    │           └── carousel_card.dart
     ├── example/
     │   └── lib/main.dart
     └── test/
