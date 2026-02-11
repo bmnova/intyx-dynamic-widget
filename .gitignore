@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+.venv/
+
+# Flutter
+flutter_client/.dart_tool/
+flutter_client/.packages
+flutter_client/build/
+flutter_client/.flutter-plugins
+flutter_client/.flutter-plugins-dependencies
+flutter_client/pubspec.lock
+
+# Firebase
+firebase-debug.log
+.firebase/
+
+# IDE
+.idea/
+.vscode/
+*.swp
