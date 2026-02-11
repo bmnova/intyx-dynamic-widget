@@ -65,6 +65,36 @@ WIDGET_CATALOG = {
             "description": "Aksiyon odakli kart - buton(lar)",
             "params": ["title", "actions"],
         },
+        {
+            "type": "rating",
+            "description": "Yildiz puanlama karti — deneyim degerlendirmesi",
+            "params": ["title", "subtitle", "max_stars"],
+        },
+        {
+            "type": "poll",
+            "description": "Anket/oylama karti — tek secimli",
+            "params": ["question", "options"],
+        },
+        {
+            "type": "social_proof",
+            "description": "Sosyal kanit — metrik, testimonial, kullanici sayisi",
+            "params": ["title", "subtitle", "metric", "metric_label", "quote", "author"],
+        },
+        {
+            "type": "progress",
+            "description": "Ilerleme/hedef karti — yuzde cubugu ile",
+            "params": ["title", "subtitle", "progress", "progress_label", "action_text"],
+        },
+        {
+            "type": "profile",
+            "description": "Profil/kullanici spotlight karti",
+            "params": ["name", "avatar_url", "title", "subtitle", "action_text"],
+        },
+        {
+            "type": "banner",
+            "description": "Basit metin banner — ozel gun, duyuru, motivasyon",
+            "params": ["text", "emoji", "action_text", "style"],
+        },
     ],
 }
 
@@ -74,6 +104,13 @@ hangi widget'larin gosterilmesi gerektigine karar verirsin.
 
 Mevcut widget katalogu:
 {catalog}
+
+ONEMLI: Eger context icinde "developer_task" alani varsa, bu developerin
+sana verdigi gorev tanimidir. Ornegin:
+  - "Benim appim bir kiyafet uygulamasi, kullaniciya hava durumuna gore oneri kombinler goster"
+  - "Benim appim bir diyet uygulamasi, kullaniciya mevsime gore meyveler oneren widget goster"
+Bu goreve gore en uygun widget tipini sec ve parametreleri doldur.
+Developer'in amacina uygun, yaratici ve faydali icerikler olustur.
 
 Eger context icinde color_palette varsa, widget'larin common alanina aynen ekle.
 Bu sayede widget'lar host uygulamanin renk temasina uyumlu gorunur.

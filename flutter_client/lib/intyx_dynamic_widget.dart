@@ -29,11 +29,17 @@ export 'widgets/informational_widget.dart';
 export 'widgets/promotional_widget.dart';
 
 // Widgets - UI Cards
+export 'widgets/ui/banner_card.dart';
 export 'widgets/ui/carousel_card.dart';
 export 'widgets/ui/clickable_image_link_card.dart';
 export 'widgets/ui/countdown_banner_card.dart';
 export 'widgets/ui/hero_image_card.dart';
 export 'widgets/ui/icon_text_action_card.dart';
+export 'widgets/ui/poll_card.dart';
+export 'widgets/ui/profile_card.dart';
+export 'widgets/ui/progress_card.dart';
+export 'widgets/ui/rating_card.dart';
+export 'widgets/ui/social_proof_card.dart';
 export 'widgets/ui/title_subtitle_image_card.dart';
 
 // --- Default Registration ---
@@ -43,11 +49,17 @@ import 'widgets/contextual_widget.dart';
 import 'widgets/functional_widget.dart';
 import 'widgets/informational_widget.dart';
 import 'widgets/promotional_widget.dart';
+import 'widgets/ui/banner_card.dart';
 import 'widgets/ui/carousel_card.dart';
 import 'widgets/ui/clickable_image_link_card.dart';
 import 'widgets/ui/countdown_banner_card.dart';
 import 'widgets/ui/hero_image_card.dart';
 import 'widgets/ui/icon_text_action_card.dart';
+import 'widgets/ui/poll_card.dart';
+import 'widgets/ui/profile_card.dart';
+import 'widgets/ui/progress_card.dart';
+import 'widgets/ui/rating_card.dart';
+import 'widgets/ui/social_proof_card.dart';
 import 'widgets/ui/title_subtitle_image_card.dart';
 
 /// Call this once at app startup to register all built-in widget types.
@@ -63,5 +75,11 @@ void registerDefaultWidgets() {
     'contextual': (p) => ContextualWidget.fromJson(p),
     'informational': (p) => InformationalWidget.fromJson(p),
     'functional': (p) => FunctionalWidget.fromJson(p),
+    'rating': (p) => RatingCard.fromJson(p),
+    'poll': (p) => PollCard.fromJson(p),
+    'social_proof': (p) => SocialProofCard.fromJson(p),
+    'progress': (p) => ProgressCard.fromJson(p),
+    'profile': (p) => ProfileCard.fromJson(p),
+    'banner': (p) => BannerCard.fromJson(p),
   });
 }

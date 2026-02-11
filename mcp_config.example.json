@@ -9,6 +9,19 @@
         "FIREBASE_CREDENTIALS_PATH": "/path/to/credentials.json",
         "GEMINI_API_KEY": "your-gemini-api-key"
       }
+    },
+    "intyx-weather": {
+      "command": "python",
+      "args": ["-m", "server.mcp.weather"],
+      "cwd": "/path/to/intyx-dynamic-widget",
+      "env": {
+        "OPENWEATHER_API_KEY": "your-openweather-api-key"
+      }
+    },
+    "intyx-holidays": {
+      "command": "python",
+      "args": ["-m", "server.mcp.holidays"],
+      "cwd": "/path/to/intyx-dynamic-widget"
     }
   }
 }

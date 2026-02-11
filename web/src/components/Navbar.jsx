@@ -4,6 +4,7 @@ const links = [
   { to: '/', label: 'Ana Sayfa' },
   { to: '/pricing', label: 'Paketler' },
   { to: '/dashboard', label: 'Dashboard' },
+  { to: '/agent-tasks', label: 'Agent Gorevleri' },
 ];
 
 export default function Navbar() {

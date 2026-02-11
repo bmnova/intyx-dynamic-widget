@@ -1,5 +1,5 @@
 {
-  "catalog_version": "1.0.0",
+  "catalog_version": "2.0.0",
   "widgets": [
     {
       "type": "title_subtitle_image",
@@ -113,6 +113,70 @@
             "style":  { "type": "enum", "values": ["primary","secondary","text"], "default": "primary" }
           }
         }
+      }
+    },
+    {
+      "type": "rating",
+      "description": "Yildiz puanlama karti — kullanici deneyimi veya urun degerlendirmesi",
+      "params": {
+        "title":     { "type": "string", "required": true,  "description": "Soru metni" },
+        "subtitle":  { "type": "string", "required": false, "description": "Ek aciklama" },
+        "max_stars": { "type": "int",    "required": false, "default": 5, "description": "Maksimum yildiz sayisi" }
+      }
+    },
+    {
+      "type": "poll",
+      "description": "Anket/oylama karti — secenekli tek secim",
+      "params": {
+        "question": { "type": "string", "required": true, "description": "Anket sorusu" },
+        "options":  { "type": "array",  "required": true, "description": "Secenek listesi (string[])" }
+      }
+    },
+    {
+      "type": "social_proof",
+      "description": "Sosyal kanit karti — metrik, testimonial, kullanici sayisi",
+      "params": {
+        "title":        { "type": "string", "required": true },
+        "subtitle":     { "type": "string", "required": false },
+        "metric":       { "type": "string", "required": false, "description": "Buyuk gosterilen sayi/metrik (orn: 12.5K)" },
+        "metric_label": { "type": "string", "required": false, "description": "Metrik aciklamasi" },
+        "quote":        { "type": "string", "required": false, "description": "Kullanici yorumu" },
+        "author":       { "type": "string", "required": false, "description": "Yorum sahibi" }
+      }
+    },
+    {
+      "type": "progress",
+      "description": "Ilerleme/hedef karti — yuzde cubugu ile",
+      "params": {
+        "title":          { "type": "string", "required": true },
+        "subtitle":       { "type": "string", "required": false },
+        "progress":       { "type": "double", "required": true,  "description": "0.0 - 1.0 arasi ilerleme" },
+        "progress_label": { "type": "string", "required": false, "description": "Cubuk altindaki aciklama (orn: 3/5 gorev)" },
+        "action_text":    { "type": "string", "required": false },
+        "action_url":     { "type": "string", "required": false }
+      }
+    },
+    {
+      "type": "profile",
+      "description": "Profil/kullanici spotlight karti — avatar, isim, aksiyon",
+      "params": {
+        "name":        { "type": "string", "required": true },
+        "avatar_url":  { "type": "string", "required": false },
+        "title":       { "type": "string", "required": false, "description": "Unvan veya rol" },
+        "subtitle":    { "type": "string", "required": false },
+        "action_text": { "type": "string", "required": false, "description": "Buton metni (orn: Takip Et)" },
+        "action_url":  { "type": "string", "required": false }
+      }
+    },
+    {
+      "type": "banner",
+      "description": "Basit metin banner — ozel gun, duyuru, motivasyon",
+      "params": {
+        "text":        { "type": "string", "required": true,  "description": "Banner metni" },
+        "emoji":       { "type": "string", "required": false, "description": "Soldaki emoji" },
+        "action_text": { "type": "string", "required": false },
+        "action_url":  { "type": "string", "required": false },
+        "style":       { "type": "enum",   "values": ["default","gradient","outlined"], "default": "default" }
       }
     }
   ],
