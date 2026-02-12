@@ -6,9 +6,11 @@ Bu dokümanda **web/** (Vite + React) uygulamasını canlıya alma adımları an
 
 ```bash
 cd web
-npm ci   # veya npm install
+npm install   # ilk seferde lock dosyası için; CI'da npm ci kullanın
 npm run build
 ```
+
+Not: `npm ci` kullanmak için önce bir kez `npm install` ile `package-lock.json` oluşturulmuş olmalı.
 
 Çıktı: **`web/dist/`**  
 Önizleme: `npm run preview` (genelde http://localhost:4173)
@@ -19,18 +21,10 @@ npm run build
 
 1. [vercel.com](https://vercel.com) → GitHub ile giriş.
 2. **Add New Project** → Repoyu seç (`intyx-dynamic-widget`).
-
-**Seçenek A – Root Directory kullanmak:**  
-3. Ayarlar:
-   - **Root Directory:** `web` (Browse ile seçin)
-   - Build / Output ayarlarını boş bırakın; `web/vercel.json` kullanılır.
-4. **Deploy**.
-
-**Seçenek B – Repo kökünden build:**  
-3. Root Directory’yi **boş** bırakın. Proje kökündeki `vercel.json` build’i `web` altında çalıştırır ve `web/dist` yayınlanır.
-4. **Deploy**.
-
-Her iki durumda da `main` branch’e her push’ta otomatik deploy olur.
+3. **Framework Preset:** Listeden **Vite** seçin (gerekli; aksi halde build ayarları yanlış olur).
+4. **Root Directory:** `web` (Edit / Browse ile `web` klasörünü seçin).
+5. Build Command / Output Directory boş bırakılabilir; `web/vercel.json` otomatik kullanılır.
+6. **Deploy** → Her `main` push’unda otomatik deploy olur.
 
 ---
 
