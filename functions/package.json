@@ -1,0 +1,17 @@
+{
+  "name": "intyx-dynamic-widget-functions",
+  "description": "Firebase Cloud Functions — Gemini widget suggestion & content",
+  "main": "index.js",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "firebase-functions": "^6.3.0",
+    "@google/generative-ai": "^0.21.0"
+  }
+}

@@ -10,6 +10,9 @@ jobs:
   server-tests:
     name: Server Tests
     runs-on: ubuntu-latest
+    env:
+      FIREBASE_PROJECT_ID: intyx-dynamic-widget
+      GEMINI_API_KEY: test-key-for-ci
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

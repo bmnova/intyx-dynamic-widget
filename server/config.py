@@ -3,6 +3,20 @@
 import logging
 import os
 import sys
+from pathlib import Path
+
+# Load .env from repo root and server/ so that `python -m server.app` or `flask run` use them
+def _load_dotenv():
+    try:
+        from dotenv import load_dotenv
+        root = Path(__file__).resolve().parent.parent
+        load_dotenv(root / ".env")
+        load_dotenv(Path(__file__).resolve().parent / ".env")
+    except ImportError:
+        pass
+
+
+_load_dotenv()
 
 # Firebase
 FIREBASE_PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID", "intyx-dynamic-widget")
@@ -49,11 +63,8 @@ def validate_config() -> None:
     if not OPENWEATHER_API_KEY:
         warnings.append("OPENWEATHER_API_KEY not set — weather data will use placeholders")
 
-    if not GEMINI_API_KEY:
-        warnings.append("GEMINI_API_KEY not set — AI features will be unavailable")
-
     if not SERVER_API_KEY:
-        warnings.append("INTYX_SERVER_API_KEY not set — API endpoints are unprotected")
+        warnings.append("INTYX_SERVER_API_KEY not set — API endpoints are unprotected (TODO: test sonrası ekleyin)")
 
     for w in warnings:
         logger.warning("CONFIG: %s", w)
@@ -61,4 +72,7 @@ def validate_config() -> None:
     # Hard failures
     if not FIREBASE_PROJECT_ID:
         logger.error("FIREBASE_PROJECT_ID is required but not set")
+        sys.exit(1)
+    if not GEMINI_API_KEY:
+        logger.error("GEMINI_API_KEY is required (AI widget suggestions and agent tasks)")
         sys.exit(1)

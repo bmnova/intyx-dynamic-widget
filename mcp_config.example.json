@@ -5,23 +5,11 @@
       "args": ["-m", "server.mcp"],
       "cwd": "/path/to/intyx-dynamic-widget",
       "env": {
-        "FIREBASE_PROJECT_ID": "your-project-id",
-        "FIREBASE_CREDENTIALS_PATH": "/path/to/credentials.json",
-        "GEMINI_API_KEY": "your-gemini-api-key"
+        "FIREBASE_PROJECT_ID": "intyx-dynamic",
+        "GEMINI_API_KEY": "your-gemini-api-key",
+        "FIREBASE_CREDENTIALS_PATH": "/path/to/serviceAccountKey.json",
+        "OPENWEATHER_API_KEY": "optional-for-weather-tools"
       }
-    },
-    "intyx-weather": {
-      "command": "python",
-      "args": ["-m", "server.mcp.weather"],
-      "cwd": "/path/to/intyx-dynamic-widget",
-      "env": {
-        "OPENWEATHER_API_KEY": "your-openweather-api-key"
-      }
-    },
-    "intyx-holidays": {
-      "command": "python",
-      "args": ["-m", "server.mcp.holidays"],
-      "cwd": "/path/to/intyx-dynamic-widget"
     }
   }
 }

@@ -17,6 +17,8 @@ flutter_client/pubspec.lock
 # Firebase
 firebase-debug.log
 .firebase/
+functions/node_modules/
+functions/.env
 
 # IDE
 .idea/

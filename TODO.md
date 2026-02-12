@@ -49,6 +49,7 @@
 ## Altyapi
 
 ### Production Oncesi
+- [ ] Test sonrası `INTYX_SERVER_API_KEY` ekle (şimdilik endpoint'ler korumasız)
 - [ ] Paddle odeme entegrasyonunu tamamla
 - [x] CI/CD pipeline kur
 - [x] Logging ve monitoring ekle
