@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 
 const PLANS = [
   {
@@ -58,7 +59,7 @@ export default function Pricing() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(null);
 
-  const handlePurchase = (planId) => {
+  const handlePurchase = async (planId) => {
     setLoading(planId);
 
     // TODO: Paddle entegrasyonu buraya gelecek
@@ -67,15 +68,29 @@ export default function Pricing() {
     //   successCallback: (data) => { ... },
     // });
 
-    // Simdilik: sahte satin alma — dashboard'a yonlendir
-    setTimeout(() => {
-      const fakeKey = `intyx_${planId}_${crypto.randomUUID().slice(0, 12)}`;
-      localStorage.setItem('intyx_api_key', fakeKey);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/licenses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: planId }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Lisans olusturulamadi');
+      }
+
+      const data = await res.json();
+      localStorage.setItem('intyx_api_key', data.api_key);
       localStorage.setItem('intyx_plan', planId);
       localStorage.setItem('intyx_purchased_at', new Date().toISOString());
-      setLoading(null);
       navigate('/dashboard');
-    }, 1200);
+    } catch (err) {
+      console.error('License creation failed:', err);
+      alert(err.message || 'Bir hata olustu, tekrar deneyin.');
+    } finally {
+      setLoading(null);
+    }
   };
 
   return (

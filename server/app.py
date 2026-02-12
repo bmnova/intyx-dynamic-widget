@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from flask import Flask, jsonify
+from flask_cors import CORS
 
 from server.config import HOST, PORT
 
@@ -10,6 +11,7 @@ from server.config import HOST, PORT
 def create_app() -> Flask:
     """Create and configure the Flask application."""
     app = Flask(__name__)
+    CORS(app)
 
     # Register blueprints
     from server.routes.widgets import widgets_bp
