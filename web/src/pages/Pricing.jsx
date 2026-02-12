@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL, PADDLE_CONFIG } from '../config';
 import Toast from '../components/Toast';
+import * as paddle from '../lib/paddle';
 
 const PLANS = [
   {
@@ -56,39 +57,67 @@ const PLANS = [
   },
 ];
 
+const hasPaddle = PADDLE_CONFIG.publishableToken && Object.keys(PADDLE_CONFIG.priceIds).length > 0;
+
 export default function Pricing() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(null);
   const [toast, setToast] = useState(null);
+  const [paddleReady, setPaddleReady] = useState(false);
+
+  useEffect(() => {
+    if (!hasPaddle) return;
+    paddle.setPaddleConfig(PADDLE_CONFIG);
+    paddle.loadPaddleScript().then(() => paddle.initPaddle()).then(() => setPaddleReady(true)).catch(console.warn);
+  }, []);
+
+  const createLicenseAndRedirect = async (planId, email = '') => {
+    const res = await fetch(`${API_BASE_URL}/api/licenses`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan: planId, email: email || undefined }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Could not create license');
+    }
+    const data = await res.json();
+    localStorage.setItem('intyx_api_key', data.api_key);
+    localStorage.setItem('intyx_plan', planId);
+    localStorage.setItem('intyx_purchased_at', new Date().toISOString());
+    navigate('/dashboard');
+  };
 
   const handlePurchase = async (planId) => {
     setLoading(planId);
 
-    // TODO: Paddle entegrasyonu buraya gelecek
-    // Paddle.Checkout.open({
-    //   product: PADDLE_PRODUCT_IDS[planId],
-    //   successCallback: (data) => { ... },
-    // });
-
     try {
-      const res = await fetch(`${API_BASE_URL}/api/licenses`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: planId }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'Could not create license');
+      // Free plan: create license directly
+      if (planId === 'starter') {
+        await createLicenseAndRedirect(planId);
+        return;
       }
 
-      const data = await res.json();
-      localStorage.setItem('intyx_api_key', data.api_key);
-      localStorage.setItem('intyx_plan', planId);
-      localStorage.setItem('intyx_purchased_at', new Date().toISOString());
-      navigate('/dashboard');
+      // Paid plans: open Paddle checkout (web only)
+      if (hasPaddle && paddleReady) {
+        const result = await paddle.openCheckout({
+          planKey: planId,
+          customData: { plan: planId },
+        });
+
+        if (result.status === 'completed') {
+          const email = result.data?.customer?.email || result.data?.customer_email || '';
+          await createLicenseAndRedirect(planId, email);
+        } else {
+          setToast({ type: 'info', message: 'Checkout was closed. You can try again when ready.' });
+        }
+        return;
+      }
+
+      // Fallback when Paddle not configured: simulate (demo)
+      await createLicenseAndRedirect(planId);
     } catch (err) {
-      console.error('License creation failed:', err);
+      console.error('Purchase failed:', err);
       setToast({ type: 'error', message: err.message || 'Something went wrong. Please try again.' });
     } finally {
       setLoading(null);
@@ -146,12 +175,12 @@ export default function Pricing() {
         ))}
       </div>
 
-      {/* Paddle placeholder notice */}
       <div style={styles.notice}>
         <span style={{ fontSize: 18 }}>💳</span>
         <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>
-          We use <strong style={{ color: 'var(--text)' }}>Paddle</strong> for payments.
-          Currently in demo mode — purchases are simulated.
+          {hasPaddle
+            ? <>We use <strong style={{ color: 'var(--text)' }}>Paddle</strong> for secure payments. Pro & Enterprise open the Paddle checkout.</>
+            : <>Payments via <strong style={{ color: 'var(--text)' }}>Paddle</strong>. Set <code>VITE_PADDLE_PUBLISHABLE_TOKEN</code> and <code>VITE_PADDLE_PRICE_IDS</code> for live checkout.</>}
         </p>
       </div>
 
