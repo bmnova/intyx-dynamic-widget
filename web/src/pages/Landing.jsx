@@ -2,23 +2,23 @@ import { Link } from 'react-router-dom';
 import WidgetCard from '../components/WidgetCard';
 
 const WIDGETS = [
-  { icon: '🖼️', title: 'Hero Image', description: 'Tam genislikte hero resim, overlay baslik ve CTA butonu', tag: 'UI' },
-  { icon: '🏷️', title: 'Promotional', description: 'Kampanya/promosyon karti - rozet, indirim, aksiyon', tag: 'Kampanya' },
-  { icon: '🎠', title: 'Carousel', description: 'Yatay kaydirmali coklu icerik karti', tag: 'UI' },
-  { icon: '⏱️', title: 'Countdown Banner', description: 'Geri sayim zamanlayici ile kampanya banner\'i', tag: 'Kampanya' },
-  { icon: '☁️', title: 'Contextual', description: 'Hava durumu, burc gibi baglamsal bilgi karti', tag: 'AI Driven' },
-  { icon: '📢', title: 'Informational', description: 'Bilgilendirme ve duyuru karti - severity destegi', tag: 'Bildirim' },
-  { icon: '⚡', title: 'Functional', description: 'Aksiyon odakli kart - buton(lar) ve deep link', tag: 'Aksiyon' },
-  { icon: '🔗', title: 'Clickable Image', description: 'Tiklanabilir resim, baslik ve yonlendirme linki', tag: 'UI' },
-  { icon: '📝', title: 'Title + Subtitle', description: 'Baslik, alt baslik ve resim iceren kart', tag: 'UI' },
-  { icon: '🎯', title: 'Icon Text Action', description: 'Ikon, baslik, aciklama ve aksiyon butonu', tag: 'Aksiyon' },
+  { icon: '🖼️', title: 'Hero Image', description: 'Full-width hero image, overlay title and CTA button', tag: 'UI' },
+  { icon: '🏷️', title: 'Promotional', description: 'Campaign/promo card — badge, discount, action', tag: 'Campaign' },
+  { icon: '🎠', title: 'Carousel', description: 'Horizontal scrollable multi-content cards', tag: 'UI' },
+  { icon: '⏱️', title: 'Countdown Banner', description: 'Campaign banner with countdown timer', tag: 'Campaign' },
+  { icon: '☁️', title: 'Contextual', description: 'Contextual info card (weather, horoscope, etc.)', tag: 'AI Driven' },
+  { icon: '📢', title: 'Informational', description: 'Info and announcement card with severity support', tag: 'Notice' },
+  { icon: '⚡', title: 'Functional', description: 'Action-focused card — buttons and deep link', tag: 'Action' },
+  { icon: '🔗', title: 'Clickable Image', description: 'Clickable image, title and redirect link', tag: 'UI' },
+  { icon: '📝', title: 'Title + Subtitle', description: 'Card with title, subtitle and image', tag: 'UI' },
+  { icon: '🎯', title: 'Icon Text Action', description: 'Icon, title, description and action button', tag: 'Action' },
 ];
 
 const FEATURES = [
-  { icon: '🤖', title: 'AI Agent Kararlari', desc: 'Hangi widget\'in nerede gorunecegine AI agent karar verir. Context\'e gore otomatik secim.' },
-  { icon: '🎨', title: 'ColorScheme Uyumu', desc: 'Host uygulamanin ColorScheme\'ini parametre olarak ver, widget\'lar otomatik uyumlansin.' },
-  { icon: '📐', title: 'Responsive Layout', desc: 'Width, height, padding, margin, aspect ratio — her sey JSON\'dan konfigurasyon.' },
-  { icon: '🔥', title: 'Firebase + MCP', desc: 'Firestore backend, MCP server ile AI entegrasyonu. Realtime widget yonetimi.' },
+  { icon: '🤖', title: 'AI Agent Decisions', desc: 'The AI agent decides which widget appears where. Automatic selection based on context.' },
+  { icon: '🎨', title: 'ColorScheme Match', desc: 'Pass your app\'s ColorScheme as a parameter; widgets adapt automatically.' },
+  { icon: '📐', title: 'Responsive Layout', desc: 'Width, height, padding, margin, aspect ratio — all configurable via JSON.' },
+  { icon: '🔥', title: 'Firebase + MCP', desc: 'Firestore backend, AI integration via MCP server. Realtime widget management.' },
 ];
 
 export default function Landing() {
@@ -28,16 +28,16 @@ export default function Landing() {
       <section style={styles.hero}>
         <div style={styles.badge}>Flutter Dynamic Widget System</div>
         <h1 style={styles.h1}>
-          AI-Driven Widget'lar,<br />
-          <span style={{ color: '#6366f1' }}>Tek Satirda</span>
+          AI-Driven Widgets,<br />
+          <span style={{ color: '#6366f1' }}>In One Line</span>
         </h1>
         <p style={styles.subtitle}>
-          Flutter uygulamana dinamik, AI tarafindan yonetilen widget'lar ekle.
-          Agent context'e bakarak hangi widget'i, hangi parametrelerle gosterecegine kendisi karar versin.
+          Add dynamic, AI-managed widgets to your Flutter app.
+          The agent decides which widget to show and with which parameters based on context.
         </p>
         <div style={styles.heroActions}>
           <Link to="/pricing" style={styles.btnPrimary}>
-            Paketleri Incele →
+            View Plans →
           </Link>
           <Link to="/dashboard" style={styles.btnSecondary}>
             Dashboard
@@ -63,7 +63,7 @@ export default function Landing() {
 
       {/* Features */}
       <section style={styles.section}>
-        <h2 style={styles.h2}>Nasil Calisiyor?</h2>
+        <h2 style={styles.h2}>How It Works</h2>
         <div style={styles.featGrid}>
           {FEATURES.map((f) => (
             <div key={f.title} style={styles.featCard}>
@@ -77,9 +77,9 @@ export default function Landing() {
 
       {/* Widget catalog */}
       <section style={styles.section}>
-        <h2 style={styles.h2}>Widget Katalogu</h2>
+        <h2 style={styles.h2}>Widget Catalog</h2>
         <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginBottom: 40 }}>
-          10 hazir widget tipi. Agent bunlardan uygun olani secer, parametreleri doldurur.
+          10+ ready-made widget types. The agent picks the right one and fills in the parameters.
         </p>
         <div style={styles.grid}>
           {WIDGETS.map((w) => (
@@ -90,19 +90,19 @@ export default function Landing() {
 
       {/* CTA */}
       <section style={{ ...styles.section, textAlign: 'center', paddingBottom: 80 }}>
-        <h2 style={styles.h2}>Hemen Basla</h2>
+        <h2 style={styles.h2}>Get Started</h2>
         <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
-          Paket sec, API key'ini al, Flutter projenize ekle.
+          Choose a plan, get your API key, add it to your Flutter project.
         </p>
         <Link to="/pricing" style={styles.btnPrimary}>
-          Paketleri Gor →
+          View Plans →
         </Link>
       </section>
 
       {/* Footer */}
       <footer style={styles.footer}>
         <span style={{ color: '#71717a', fontSize: 13 }}>
-          © 2026 Intyx. Tum haklari saklidir.
+          © 2026 Intyx. All rights reserved.
         </span>
       </footer>
     </div>

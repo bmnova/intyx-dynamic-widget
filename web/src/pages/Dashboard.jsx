@@ -40,11 +40,11 @@ export default function Dashboard() {
     return (
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '80px 24px', textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 24 }}>🔒</div>
-        <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>Henuz paket almadiniz</h2>
+        <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>No plan selected yet</h2>
         <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
-          Widget sistemini kullanmak icin bir paket secin ve API key'inizi alin.
+          Choose a plan and get your API key to use the widget system.
         </p>
-        <Link to="/pricing" style={styles.btnPrimary}>Paketleri Incele →</Link>
+        <Link to="/pricing" style={styles.btnPrimary}>View Plans →</Link>
       </div>
     );
   }
@@ -61,21 +61,21 @@ export default function Dashboard() {
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '60px 24px' }}>
       <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>Dashboard</h1>
       <p style={{ color: 'var(--text-muted)', marginBottom: 40 }}>
-        API key'inizi Flutter projenizde kullanarak widget sistemini aktif edin.
+        Use your API key in your Flutter project to enable the widget system.
       </p>
 
       {/* Plan info */}
       <div style={styles.card}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>Aktif Paket</div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>Active Plan</div>
             <div style={{ fontSize: 20, fontWeight: 700 }}>{planLabel}</div>
           </div>
-          <span style={styles.activeBadge}>Aktif</span>
+          <span style={styles.activeBadge}>Active</span>
         </div>
         {purchasedAt && (
           <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 8 }}>
-            Baslangic: {new Date(purchasedAt).toLocaleDateString('tr-TR')}
+            Started: {new Date(purchasedAt).toLocaleDateString()}
           </div>
         )}
       </div>
@@ -86,22 +86,22 @@ export default function Dashboard() {
         <div style={styles.keyRow}>
           <code style={styles.keyCode}>{apiKey}</code>
           <button onClick={copyKey} style={styles.copyBtn}>
-            {copied ? '✓ Kopyalandi' : 'Kopyala'}
+            {copied ? '✓ Copied' : 'Copy'}
           </button>
         </div>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 12 }}>
-          Bu key'i kimseyle paylasmayın. Her key tek bir projeye aittir.
+          Do not share this key. Each key is tied to a single project.
         </p>
       </div>
 
       {/* Integration guide */}
       <div style={{ ...styles.card, marginTop: 16 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Flutter Entegrasyonu</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Flutter Integration</h3>
 
         <div style={styles.step}>
           <span style={styles.stepNum}>1</span>
           <div>
-            <div style={styles.stepTitle}>pubspec.yaml'a ekle</div>
+            <div style={styles.stepTitle}>Add to pubspec.yaml</div>
             <pre style={styles.codeBlock}>{`dependencies:
   intyx_dynamic_widget:
     git:
@@ -113,7 +113,7 @@ export default function Dashboard() {
         <div style={styles.step}>
           <span style={styles.stepNum}>2</span>
           <div>
-            <div style={styles.stepTitle}>Uygulamanda initialize et</div>
+            <div style={styles.stepTitle}>Initialize in your app</div>
             <pre style={styles.codeBlock}>{`import 'package:intyx_dynamic_widget/intyx_dynamic_widget.dart';
 
 void main() {
@@ -129,7 +129,7 @@ void main() {
         <div style={styles.step}>
           <span style={styles.stepNum}>3</span>
           <div>
-            <div style={styles.stepTitle}>Widget'i yerlestir</div>
+            <div style={styles.stepTitle}>Place the widget</div>
             <pre style={styles.codeBlock}>{`DynamicWidgetContainer(
   responseJson: agentResponse,
   colorScheme: Theme.of(context).colorScheme,
@@ -145,15 +145,15 @@ void main() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 16 }}>
         <div style={styles.statCard}>
           <div style={styles.statValue}>0</div>
-          <div style={styles.statLabel}>Widget Gosterim</div>
+          <div style={styles.statLabel}>Widget Views</div>
         </div>
         <div style={styles.statCard}>
           <div style={styles.statValue}>0</div>
-          <div style={styles.statLabel}>Etkilesim</div>
+          <div style={styles.statLabel}>Interactions</div>
         </div>
         <div style={styles.statCard}>
           <div style={styles.statValue}>0</div>
-          <div style={styles.statLabel}>Aktif Kullanici</div>
+          <div style={styles.statLabel}>Active Users</div>
         </div>
       </div>
 

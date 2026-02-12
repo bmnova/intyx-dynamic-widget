@@ -12,10 +12,10 @@ export default function NotFound() {
         404
       </div>
       <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>
-        Sayfa Bulunamadi
+        Page Not Found
       </h2>
       <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
-        Aradiginiz sayfa mevcut degil veya tasindi.
+        The page you're looking for doesn't exist or has been moved.
       </p>
       <Link
         to="/"
@@ -32,7 +32,7 @@ export default function NotFound() {
           textDecoration: 'none',
         }}
       >
-        Ana Sayfaya Don
+        Back to Home
       </Link>
     </div>
   );

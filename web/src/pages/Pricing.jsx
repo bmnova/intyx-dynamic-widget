@@ -8,50 +8,50 @@ const PLANS = [
     id: 'starter',
     name: 'Starter',
     price: 0,
-    period: 'ucretsiz',
-    description: 'Denemek icin ideal',
+    period: 'free',
+    description: 'Ideal to try it out',
     features: [
-      '3 widget tipi',
-      '1.000 MAU',
-      'Topluluk destegi',
-      'Temel analitik',
+      '3 widget types',
+      '1,000 MAU',
+      'Community support',
+      'Basic analytics',
     ],
-    cta: 'Ucretsiz Basla',
+    cta: 'Start Free',
     popular: false,
   },
   {
     id: 'pro',
     name: 'Pro',
     price: 49,
-    period: '/ay',
-    description: 'Buyuyen uygulamalar icin',
+    period: '/mo',
+    description: 'For growing apps',
     features: [
-      '10 widget tipi (tumu)',
-      '50.000 MAU',
-      'AI agent oneriler',
-      'ColorScheme entegrasyonu',
-      'Trigger sistemi',
-      'Oncelikli destek',
+      '10 widget types (all)',
+      '50,000 MAU',
+      'AI agent suggestions',
+      'ColorScheme integration',
+      'Trigger system',
+      'Priority support',
     ],
-    cta: 'Pro Paketi Sec',
+    cta: 'Choose Pro',
     popular: true,
   },
   {
     id: 'enterprise',
     name: 'Enterprise',
     price: 199,
-    period: '/ay',
-    description: 'Olceklenen urunler icin',
+    period: '/mo',
+    description: 'For scale',
     features: [
-      'Sinirsiz widget',
-      'Sinirsiz MAU',
-      'Ozel widget tipleri',
-      'Ozel AI model fine-tune',
-      'SLA garantisi',
-      'Dedicated destek',
-      'On-premise secenegi',
+      'Unlimited widgets',
+      'Unlimited MAU',
+      'Custom widget types',
+      'Custom AI model fine-tune',
+      'SLA guarantee',
+      'Dedicated support',
+      'On-premise option',
     ],
-    cta: 'Iletisime Gec',
+    cta: 'Contact Us',
     popular: false,
   },
 ];
@@ -79,7 +79,7 @@ export default function Pricing() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'Lisans olusturulamadi');
+        throw new Error(err.error || 'Could not create license');
       }
 
       const data = await res.json();
@@ -89,7 +89,7 @@ export default function Pricing() {
       navigate('/dashboard');
     } catch (err) {
       console.error('License creation failed:', err);
-      setToast({ type: 'error', message: err.message || 'Bir hata olustu, tekrar deneyin.' });
+      setToast({ type: 'error', message: err.message || 'Something went wrong. Please try again.' });
     } finally {
       setLoading(null);
     }
@@ -98,9 +98,9 @@ export default function Pricing() {
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
       <section style={styles.hero}>
-        <h1 style={styles.h1}>Basit Fiyatlandirma</h1>
+        <h1 style={styles.h1}>Simple Pricing</h1>
         <p style={styles.subtitle}>
-          Projenin buyuklugune gore paket sec. Istedigin zaman yukselt veya iptal et.
+          Choose a plan based on your project size. Upgrade or cancel anytime.
         </p>
       </section>
 
@@ -113,12 +113,12 @@ export default function Pricing() {
               ...(plan.popular ? styles.cardPopular : {}),
             }}
           >
-            {plan.popular && <div style={styles.popularBadge}>Populer</div>}
+            {plan.popular && <div style={styles.popularBadge}>Popular</div>}
             <h3 style={styles.planName}>{plan.name}</h3>
             <p style={styles.planDesc}>{plan.description}</p>
             <div style={styles.priceRow}>
               <span style={styles.price}>
-                {plan.price === 0 ? 'Ucretsiz' : `$${plan.price}`}
+                {plan.price === 0 ? 'Free' : `$${plan.price}`}
               </span>
               {plan.price > 0 && (
                 <span style={styles.period}>{plan.period}</span>
@@ -133,7 +133,7 @@ export default function Pricing() {
               onClick={() => handlePurchase(plan.id)}
               disabled={loading !== null}
             >
-              {loading === plan.id ? 'Isleniyor...' : plan.cta}
+              {loading === plan.id ? 'Processing...' : plan.cta}
             </button>
             <ul style={styles.features}>
               {plan.features.map((f) => (
@@ -150,8 +150,8 @@ export default function Pricing() {
       <div style={styles.notice}>
         <span style={{ fontSize: 18 }}>💳</span>
         <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>
-          Odeme altyapisi olarak <strong style={{ color: 'var(--text)' }}>Paddle</strong> kullanilacaktir.
-          Suanda demo modunda — satin alma islemleri simule edilir.
+          We use <strong style={{ color: 'var(--text)' }}>Paddle</strong> for payments.
+          Currently in demo mode — purchases are simulated.
         </p>
       </div>
 

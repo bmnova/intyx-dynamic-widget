@@ -12,8 +12,11 @@ npm run build
 
 Not: `npm ci` kullanmak için önce bir kez `npm install` ile `package-lock.json` oluşturulmuş olmalı.
 
-Çıktı: **`web/dist/`**  
-Önizleme: `npm run preview` (genelde http://localhost:4173)
+Çıktı: **`web/dist/`**
+
+**Deploy öncesi PC’de görmek:**  
+- Geliştirme: `npm run dev` → tarayıcıda **http://localhost:3000**  
+- Production önizleme: `npm run build` sonra `npm run preview` → **http://localhost:4173**
 
 ---
 
@@ -22,9 +25,9 @@ Not: `npm ci` kullanmak için önce bir kez `npm install` ile `package-lock.json
 1. [vercel.com](https://vercel.com) → GitHub ile giriş.
 2. **Add New Project** → Repoyu seç (`intyx-dynamic-widget`).
 3. **Framework Preset:** Listeden **Vite** seçin (gerekli; aksi halde build ayarları yanlış olur).
-4. **Root Directory:** `web` (Edit / Browse ile `web` klasörünü seçin).
-5. Build Command / Output Directory boş bırakılabilir; `web/vercel.json` otomatik kullanılır.
-6. **Deploy** → Her `main` push’unda otomatik deploy olur.
+4. **Root Directory:** Mutlaka **`web`** seçin (Edit → `web` klasörü). Seçmezseniz "cd: web: No such file or directory" hatası alırsınız.
+5. Build Command / Output Directory boş bırakın; `web/vercel.json` kullanılır.
+6. **Deploy** → Her push’ta otomatik deploy olur.
 
 ---
 

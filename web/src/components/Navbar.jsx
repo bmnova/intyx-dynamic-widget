@@ -1,10 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
 
 const links = [
-  { to: '/', label: 'Ana Sayfa' },
-  { to: '/pricing', label: 'Paketler' },
+  { to: '/', label: 'Home' },
+  { to: '/pricing', label: 'Pricing' },
   { to: '/dashboard', label: 'Dashboard' },
-  { to: '/agent-tasks', label: 'Agent Gorevleri' },
+  { to: '/agent-tasks', label: 'Agent Tasks' },
 ];
 
 export default function Navbar() {

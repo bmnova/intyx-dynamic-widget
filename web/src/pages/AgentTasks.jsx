@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 
 const EXAMPLE_TASKS = [
-  'Benim appim bir kiyafet uygulamasi, kullaniciya hava durumuna gore oneri kombinler gosteren widget goster',
-  'Benim appim bir diyet uygulamasi, kullaniciya mevsime gore meyveler oneren widget gostermeli',
-  'Benim appim bir fitness uygulamasi, kullaniciya gunluk motivasyon mesajlari ve ilerleme gostersin',
-  'Benim appim bir e-ticaret uygulamasi, ozel gunlerde kampanya banner\'lari ve indirim widget\'lari gostersin',
-  'Benim appim bir seyahat uygulamasi, gidilecek yerin hava durumuna gore packing onerileri gostersin',
+  'My app is a fashion app; show a widget that suggests outfit combinations based on the weather',
+  'My app is a diet app; show a widget that suggests seasonal fruits',
+  'My app is a fitness app; show daily motivation messages and progress',
+  'My app is an e-commerce app; show campaign banners and discount widgets on special days',
+  'My app is a travel app; show packing tips based on the destination weather',
 ];
 
 export default function AgentTasks() {
@@ -29,7 +29,7 @@ export default function AgentTasks() {
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/agent-tasks?api_key=${encodeURIComponent(apiKey)}`);
-      if (!res.ok) throw new Error('Gorevler yuklenemedi');
+      if (!res.ok) throw new Error('Failed to load tasks');
       const data = await res.json();
       setTasks(data.tasks || []);
     } catch (err) {
@@ -55,12 +55,12 @@ export default function AgentTasks() {
         body: JSON.stringify({
           api_key: apiKey,
           task: newTask.trim(),
-          name: taskName.trim() || 'Gorev',
+          name: taskName.trim() || 'Task',
         }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'Gorev olusturulamadi');
+        throw new Error(err.error || 'Could not create task');
       }
       setNewTask('');
       setTaskName('');
@@ -78,7 +78,7 @@ export default function AgentTasks() {
         `${API_BASE_URL}/api/agent-tasks/${id}?api_key=${encodeURIComponent(apiKey)}`,
         { method: 'DELETE' }
       );
-      if (!res.ok) throw new Error('Silinemedi');
+      if (!res.ok) throw new Error('Could not delete');
       setTasks(tasks.filter((t) => t.id !== id));
     } catch (err) {
       setError(err.message);
@@ -94,7 +94,7 @@ export default function AgentTasks() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ api_key: apiKey, active: !task.active }),
       });
-      if (!res.ok) throw new Error('Guncellenemedi');
+      if (!res.ok) throw new Error('Could not update');
       setTasks(tasks.map((t) => (t.id === id ? { ...t, active: !t.active } : t)));
     } catch (err) {
       setError(err.message);
@@ -114,7 +114,7 @@ export default function AgentTasks() {
           context: { current_date: new Date().toISOString() },
         }),
       });
-      if (!res.ok) throw new Error('Test basarisiz');
+      if (!res.ok) throw new Error('Test failed');
       const data = await res.json();
       setTestResult({ taskId: task.id, widgets: data.widgets || [] });
     } catch (err) {
@@ -132,17 +132,17 @@ export default function AgentTasks() {
     return (
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '80px 24px', textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 24 }}>🤖</div>
-        <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>Once paket alin</h2>
-        <p style={{ color: 'var(--text-muted)' }}>Agent gorevleri tanimlamak icin bir paket secmeniz gerekiyor.</p>
+        <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>Get a plan first</h2>
+        <p style={{ color: 'var(--text-muted)' }}>You need to choose a plan to define agent tasks.</p>
       </div>
     );
   }
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '60px 24px' }}>
-      <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>Agent Gorevleri</h1>
+      <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>Agent Tasks</h1>
       <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
-        Uygulamanizi tanimlayin, AI agent bu goreve gore hangi widget'lari gosterecegine karar versin.
+        Describe your app; the AI agent will decide which widgets to show based on this task.
       </p>
 
       {error && (
@@ -154,16 +154,16 @@ export default function AgentTasks() {
 
       {/* Create new task */}
       <div style={styles.card}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Yeni Gorev Tanimla</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Define New Task</h3>
         <input
           type="text"
-          placeholder="Gorev adi (orn: Hava Durumu Onerileri)"
+          placeholder="Task name (e.g. Weather Suggestions)"
           value={taskName}
           onChange={(e) => setTaskName(e.target.value)}
           style={styles.input}
         />
         <textarea
-          placeholder="Uygulamanizi ve ne yapmak istediginizi detayli anlatın...&#10;&#10;Ornek: Benim appim bir kiyafet uygulamasi, kullaniciya hava durumuna gore oneri kombinler gosteren widget goster"
+          placeholder="Describe your app and what you want in detail...&#10;&#10;Example: My app is a fashion app; show a widget that suggests outfit combinations based on the weather"
           value={newTask}
           onChange={(e) => setNewTask(e.target.value)}
           style={styles.textarea}
@@ -171,10 +171,10 @@ export default function AgentTasks() {
         />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <button onClick={handleCreate} disabled={!newTask.trim() || saving} style={styles.btnPrimary}>
-            {saving ? 'Kaydediliyor...' : 'Gorevi Kaydet'}
+            {saving ? 'Saving...' : 'Save Task'}
           </button>
           <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-            Bu metin AI agent'a kisilik olarak verilir
+            This text is passed to the AI agent as context
           </span>
         </div>
       </div>
@@ -182,7 +182,7 @@ export default function AgentTasks() {
       {/* Example tasks */}
       <div style={{ ...styles.card, marginTop: 16 }}>
         <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--text-muted)' }}>
-          Ornek Gorev Tanimlari
+          Example Task Descriptions
         </h3>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {EXAMPLE_TASKS.map((ex, i) => (
@@ -199,10 +199,10 @@ export default function AgentTasks() {
 
       {/* Task list */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Yukleniyor...</div>
+        <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Loading...</div>
       ) : tasks.length > 0 && (
         <div style={{ marginTop: 32 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Kayitli Gorevler</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Saved Tasks</h2>
           {tasks.map((task) => (
             <div key={task.id} style={{ ...styles.card, marginBottom: 12, opacity: task.active ? 1 : 0.5 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -217,7 +217,7 @@ export default function AgentTasks() {
                       color: task.active ? 'var(--success)' : 'var(--text-muted)',
                       fontWeight: 600,
                     }}>
-                      {task.active ? 'Aktif' : 'Pasif'}
+                      {task.active ? 'Active' : 'Inactive'}
                     </span>
                   </div>
                   <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.5 }}>{task.task}</p>
@@ -240,7 +240,7 @@ export default function AgentTasks() {
               {testResult && testResult.taskId === task.id && (
                 <div style={styles.testResult}>
                   <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
-                    AI Agent Ciktisi {testResult.error ? '(Hata)' : ''}
+                    AI Agent Output {testResult.error ? '(Error)' : ''}
                   </div>
                   {testResult.error ? (
                     <p style={{ color: '#ef4444', fontSize: 13 }}>{testResult.error}</p>
@@ -259,8 +259,8 @@ export default function AgentTasks() {
       {/* Integration code */}
       {tasks.length > 0 && (
         <div style={{ ...styles.card, marginTop: 16 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Flutter Entegrasyonu</h3>
-          <pre style={styles.codeBlock}>{`// Agent'a gorev ile widget iste
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Flutter Integration</h3>
+          <pre style={styles.codeBlock}>{`// Request widgets by agent task
 final response = await widgetService.resolveAgentTask(
   taskId: '${tasks[0]?.id ?? 'task_xxx'}',
   context: {
