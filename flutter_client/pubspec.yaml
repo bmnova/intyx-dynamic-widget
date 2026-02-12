@@ -1,7 +1,14 @@
 name: intyx_dynamic_widget
-description: Dynamic widget system for Flutter apps. AI-driven, JSON-configured, responsive widgets.
+description: "Dynamic widget system for Flutter apps. AI-driven, JSON-configured, responsive widgets with 15+ built-in UI components."
 version: 0.1.0
 homepage: https://github.com/bmnova/intyx-dynamic-widget
+repository: https://github.com/bmnova/intyx-dynamic-widget
+issue_tracker: https://github.com/bmnova/intyx-dynamic-widget/issues
+topics:
+  - widget
+  - dynamic-ui
+  - json
+  - ai
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
