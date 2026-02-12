@@ -21,6 +21,11 @@ OPENWEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5"
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_MODEL_NAME = os.environ.get("GEMINI_MODEL_NAME", "gemini-2.0-flash")
 
+# Trends
+TRENDS_POLL_INTERVAL = int(os.environ.get("TRENDS_POLL_INTERVAL", "900"))  # 15 min
+TWITTER_BEARER_TOKEN = os.environ.get("TWITTER_BEARER_TOKEN", "")
+TRENDS_REGION = os.environ.get("TRENDS_REGION", "TR")  # ISO country code
+
 # Server
 HOST = os.environ.get("HOST", "0.0.0.0")
 PORT = int(os.environ.get("PORT", "8080"))

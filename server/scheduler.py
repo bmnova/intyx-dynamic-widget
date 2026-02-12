@@ -10,10 +10,12 @@ from typing import Any
 from server.config import (
     HOROSCOPE_POLL_INTERVAL,
     NEWS_POLL_INTERVAL,
+    TRENDS_POLL_INTERVAL,
     WEATHER_POLL_INTERVAL,
 )
 from server.data_sources.horoscope_source import HoroscopeSource
 from server.data_sources.news_source import NewsSource
+from server.data_sources.trend_source import TrendSource
 from server.data_sources.weather_source import WeatherSource
 from server import firebase_client as fb
 
@@ -31,6 +33,7 @@ class DataScheduler:
         self.weather_source = WeatherSource()
         self.news_source = NewsSource()
         self.horoscope_source = HoroscopeSource()
+        self.trend_source = TrendSource()
         self._running = False
 
     async def start(self) -> None:
@@ -41,6 +44,7 @@ class DataScheduler:
             self._poll_weather(),
             self._poll_news(),
             self._poll_horoscope(),
+            self._poll_trends(),
         )
 
     def stop(self) -> None:
@@ -124,3 +128,23 @@ class DataScheduler:
                 await asyncio.sleep(backoff)
                 continue
             await asyncio.sleep(HOROSCOPE_POLL_INTERVAL)
+
+    async def _poll_trends(self) -> None:
+        consecutive_failures = 0
+        while self._running:
+            try:
+                data = await self.trend_source.fetch()
+                fb.cache_data("trends", {
+                    "items": [t.to_dict() for t in data],
+                    "count": len(data),
+                    "timestamp": time.time(),
+                })
+                logger.info("Trends data updated: %d items", len(data))
+                consecutive_failures = 0
+            except Exception:
+                consecutive_failures += 1
+                backoff = min(_INITIAL_BACKOFF ** consecutive_failures, _MAX_BACKOFF)
+                logger.exception("Trends poll failed (attempt %d, backoff %ds)", consecutive_failures, backoff)
+                await asyncio.sleep(backoff)
+                continue
+            await asyncio.sleep(TRENDS_POLL_INTERVAL)

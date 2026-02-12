@@ -70,11 +70,13 @@ def create_app() -> Flask:
     from server.routes.ai import ai_bp
     from server.routes.licenses import licenses_bp
     from server.routes.agent_tasks import agent_tasks_bp
+    from server.routes.trends import trends_bp
 
     app.register_blueprint(widgets_bp)
     app.register_blueprint(ai_bp)
     app.register_blueprint(licenses_bp)
     app.register_blueprint(agent_tasks_bp)
+    app.register_blueprint(trends_bp)
 
     # Apply stricter rate limit to AI endpoints
     from server.config import RATE_LIMIT_AI

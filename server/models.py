@@ -45,6 +45,43 @@ class HoroscopeData:
     mood: str
 
 
+class TrendPlatform(Enum):
+    TIKTOK = "tiktok"
+    TWITTER = "twitter"
+    INSTAGRAM = "instagram"
+    YOUTUBE = "youtube"
+    GOOGLE = "google"
+
+
+@dataclass
+class TrendItem:
+    """A single viral/trending topic from social media."""
+    title: str
+    platform: TrendPlatform
+    category: str  # dance, music, challenge, meme, news, etc.
+    description: str = ""
+    hashtags: list[str] = field(default_factory=list)
+    image_url: str = ""
+    url: str = ""
+    engagement: int = 0  # likes, views, shares etc.
+    region: str = "global"
+    timestamp: float = field(default_factory=time.time)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "title": self.title,
+            "platform": self.platform.value,
+            "category": self.category,
+            "description": self.description,
+            "hashtags": self.hashtags,
+            "image_url": self.image_url,
+            "url": self.url,
+            "engagement": self.engagement,
+            "region": self.region,
+            "timestamp": self.timestamp,
+        }
+
+
 # --- Color Palette ---
 
 
@@ -174,6 +211,7 @@ class TriggerContext:
     weather: WeatherData | None = None
     news: list[NewsData] = field(default_factory=list)
     horoscope: HoroscopeData | None = None
+    trends: list[TrendItem] = field(default_factory=list)
     user_actions: list[dict[str, Any]] = field(default_factory=list)
     user_preferences: dict[str, Any] = field(default_factory=dict)
     dismissed_widgets: set[str] = field(default_factory=set)

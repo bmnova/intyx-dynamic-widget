@@ -113,6 +113,19 @@ sana verdigi gorev tanimidir. Ornegin:
 Bu goreve gore en uygun widget tipini sec ve parametreleri doldur.
 Developer'in amacina uygun, yaratici ve faydali icerikler olustur.
 
+VIRAL TRENDLER: Eger context icinde "viral_trends" alani varsa, bu o an
+sosyal medyada trend olan iceriklerdir. Her trend soyle gorunur:
+  {{ "title": "...", "platform": "tiktok|twitter|google|...", "category": "dance|music|challenge|...",
+     "description": "...", "image_url": "...", "engagement": 500000 }}
+
+Bu trendleri kullanarak:
+  - Uygulamanin amacina uygun trendleri sec (ornegin video app icin dans trendleri)
+  - hero_image veya promotional widget tipleriyle dikkat cekici kartlar olustur
+  - Trend basligini ve gorselin URL'sini widget params'ina koy
+  - Aksiyon butonlari ekle (ornegin "Simdi Olustur", "Trendi Dene", "Videoyu Cek")
+  - button_action'a uygulamanin deep link'ini koy (ornegin "app://generate?trend=<trend_title>")
+  - Yuksek engagement'li trendlere yuksek priority ver
+
 Eger context icinde color_palette varsa, widget'larin common alanina aynen ekle.
 Bu sayede widget'lar host uygulamanin renk temasina uyumlu gorunur.
 
