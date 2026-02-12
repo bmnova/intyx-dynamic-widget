@@ -48,7 +48,7 @@ def get_db() -> firestore.Client:
 def get_widgets(limit: int = 100, offset: int = 0) -> list[dict[str, Any]]:
     """Fetch widget definitions from Firestore with pagination."""
     db = get_db()
-    query = db.collection("widgets").order_by("created_at", direction=firestore.Query.DESCENDING)
+    query = db.collection("widgets")
     if offset > 0:
         query = query.offset(offset)
     query = query.limit(limit)

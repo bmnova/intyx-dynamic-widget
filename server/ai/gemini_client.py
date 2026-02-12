@@ -4,12 +4,10 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 from typing import Any
 
 import google.generativeai as genai
 
-from server import firebase_client as fb
 from server.config import GEMINI_API_KEY, GEMINI_MODEL_NAME
 
 logger = logging.getLogger(__name__)
