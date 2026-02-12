@@ -5,13 +5,9 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, request
 
 from server import firebase_client as fb
+from server.ai.gemini_client import VALID_WIDGET_TYPES
 from server.models import ColorPalette, TriggerContext, WeatherCondition, WeatherData
-from server.triggers.conditions import (
-    DeveloperParamCondition,
-    SeasonalCondition,
-    UserActionCondition,
-    WeatherMatchCondition,
-)
+from server.triggers.conditions import build_conditions
 from server.triggers.engine import TriggerEngine, WidgetTriggerRule
 
 widgets_bp = Blueprint("widgets", __name__, url_prefix="/api/widgets")
@@ -19,9 +15,18 @@ widgets_bp = Blueprint("widgets", __name__, url_prefix="/api/widgets")
 
 @widgets_bp.route("", methods=["GET"])
 def list_widgets():
-    """List all active widgets, optionally filtered by user context."""
+    """List all active widgets, optionally filtered by user context.
+
+    Query params:
+        user_id: Filter out dismissed widgets for this user
+        limit: Max widgets to return (default 100)
+        offset: Skip N widgets for pagination (default 0)
+    """
     user_id = request.args.get("user_id")
-    widgets = fb.get_widgets()
+    limit = min(int(request.args.get("limit", 100)), 500)
+    offset = int(request.args.get("offset", 0))
+
+    widgets = fb.get_widgets(limit=limit, offset=offset)
 
     if user_id:
         user_state = fb.get_user_state(user_id)
@@ -29,7 +34,7 @@ def list_widgets():
         widgets = [w for w in widgets if w["id"] not in dismissed]
 
     widgets.sort(key=lambda w: w.get("priority", 0), reverse=True)
-    return jsonify({"widgets": widgets})
+    return jsonify({"widgets": widgets, "limit": limit, "offset": offset})
 
 
 @widgets_bp.route("/<widget_id>", methods=["GET"])
@@ -52,6 +57,18 @@ def create_widget():
     missing = [f for f in required if f not in data]
     if missing:
         return jsonify({"error": f"Missing fields: {missing}"}), 400
+
+    # Validate widget type against catalog
+    widget_type = data["type"]
+    if widget_type not in VALID_WIDGET_TYPES:
+        return jsonify({
+            "error": f"Unknown widget type: {widget_type}",
+            "valid_types": sorted(VALID_WIDGET_TYPES),
+        }), 400
+
+    # Validate params is a dict
+    if not isinstance(data["params"], dict):
+        return jsonify({"error": "params must be a JSON object"}), 400
 
     # Normalize color_palette into common params if provided
     if "color_palette" in data and data["color_palette"]:
@@ -94,11 +111,25 @@ def evaluate_triggers():
     weather = None
     if "weather" in data:
         w = data["weather"]
+        # Type-check temperature/humidity
+        temperature = w.get("temperature", 0)
+        humidity = w.get("humidity", 0)
+        if isinstance(temperature, str):
+            try:
+                temperature = float(temperature)
+            except (ValueError, TypeError):
+                temperature = 0.0
+        if isinstance(humidity, str):
+            try:
+                humidity = float(humidity)
+            except (ValueError, TypeError):
+                humidity = 0.0
+
         weather = WeatherData(
             location=w.get("location", ""),
-            temperature=w.get("temperature", 0),
+            temperature=float(temperature),
             condition=WeatherCondition(w.get("condition", "sunny")),
-            humidity=w.get("humidity", 0),
+            humidity=float(humidity),
         )
 
     ctx = TriggerContext(
@@ -134,7 +165,7 @@ def evaluate_triggers():
             priority=widget_data.get("priority", 0),
         )
 
-        conditions = _build_conditions(rule.get("conditions", []))
+        conditions = build_conditions(rule.get("conditions", []))
         if conditions:
             engine.register(WidgetTriggerRule(
                 widget=widget_def,
@@ -192,36 +223,3 @@ def record_user_action():
 
     fb.record_user_action(user_id, action, data.get("metadata"))
     return jsonify({"message": "Action recorded"})
-
-
-def _build_conditions(raw_conditions: list[dict]) -> list:
-    """Build TriggerCondition instances from raw config dicts."""
-    conditions = []
-    for c in raw_conditions:
-        ctype = c.get("type")
-        if ctype == "seasonal":
-            conditions.append(SeasonalCondition(
-                event=c.get("event", ""),
-                start_date=c.get("start_date", ""),
-                end_date=c.get("end_date", ""),
-            ))
-        elif ctype == "weather":
-            condition = None
-            if c.get("condition"):
-                condition = WeatherCondition(c["condition"])
-            conditions.append(WeatherMatchCondition(
-                condition=condition,
-                min_temp=c.get("min_temp"),
-                max_temp=c.get("max_temp"),
-            ))
-        elif ctype == "user_action":
-            conditions.append(UserActionCondition(
-                action_pattern=c.get("action_pattern", ""),
-                min_occurrences=c.get("min_occurrences", 1),
-            ))
-        elif ctype == "developer_param":
-            conditions.append(DeveloperParamCondition(
-                param_key=c.get("param_key", ""),
-                param_value=c.get("param_value"),
-            ))
-    return conditions

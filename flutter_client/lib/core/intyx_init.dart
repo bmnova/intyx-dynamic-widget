@@ -5,6 +5,15 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+/// Exception thrown when license validation fails in strict mode.
+class IntyxLicenseException implements Exception {
+  final String message;
+  const IntyxLicenseException(this.message);
+
+  @override
+  String toString() => 'IntyxLicenseException: $message';
+}
+
 class IntyxDynamicWidget {
   IntyxDynamicWidget._();
 
@@ -12,12 +21,13 @@ class IntyxDynamicWidget {
   static String? _plan;
   static int _widgetLimit = 0;
   static bool _initialized = false;
+  static bool _strictMode = false;
   static String _baseUrl = 'https://api.intyx.dev';
 
   /// Whether the SDK has been initialized and the license is valid.
   static bool get isInitialized => _initialized;
 
-  /// Current plan name (starter, pro, enterprise).
+  /// Current plan name (starter, pro, enterprise, offline).
   static String? get plan => _plan;
 
   /// Max widget types allowed by the current plan (-1 = unlimited).
@@ -26,7 +36,14 @@ class IntyxDynamicWidget {
   /// The API key currently in use.
   static String? get apiKey => _apiKey;
 
+  /// Whether strict mode is enabled.
+  static bool get strictMode => _strictMode;
+
   /// Initialize the SDK with the purchased API key.
+  ///
+  /// When [strict] is `true`, the SDK will throw an [IntyxLicenseException]
+  /// if the license cannot be validated (no offline fallback). Use this in
+  /// production builds where you want to enforce valid licenses.
   ///
   /// ```dart
   /// await IntyxDynamicWidget.init(apiKey: 'intyx_pro_abc123...');
@@ -34,8 +51,10 @@ class IntyxDynamicWidget {
   static Future<void> init({
     required String apiKey,
     String? baseUrl,
+    bool strict = false,
   }) async {
     _apiKey = apiKey;
+    _strictMode = strict;
     if (baseUrl != null) _baseUrl = baseUrl;
 
     try {
@@ -55,12 +74,28 @@ class IntyxDynamicWidget {
         }
       }
 
-      // Validation failed but don't crash — allow offline/demo usage
+      // Validation failed
+      if (strict) {
+        throw const IntyxLicenseException(
+          'License validation failed. Check your API key.',
+        );
+      }
+
+      // Allow offline/demo usage
       _initialized = true;
       _plan = 'offline';
       _widgetLimit = 3;
-    } catch (_) {
-      // Network error — still allow the app to run with limited features
+    } catch (e) {
+      if (e is IntyxLicenseException) rethrow;
+
+      // Network error
+      if (strict) {
+        throw IntyxLicenseException(
+          'Could not reach license server: $e',
+        );
+      }
+
+      // Still allow the app to run with limited features
       _initialized = true;
       _plan = 'offline';
       _widgetLimit = 3;
@@ -73,5 +108,6 @@ class IntyxDynamicWidget {
     _plan = null;
     _widgetLimit = 0;
     _initialized = false;
+    _strictMode = false;
   }
 }

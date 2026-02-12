@@ -164,8 +164,8 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
         return [TextContent(type="text", text=json.dumps({"id": rule_id, "status": "created"}))]
 
     elif name == "evaluate_triggers":
-        # Delegate to the REST endpoint logic
-        from server.routes.widgets import _build_conditions
+        # Delegate to the shared condition builder
+        from server.triggers.conditions import build_conditions
         from server.models import (
             TriggerContext, WeatherCondition, WeatherData,
             WidgetCategory, WidgetContent, WidgetDefinition,
@@ -207,7 +207,7 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
                 content=WidgetContent(title=wd.get("params", {}).get("title", ""), actions=[]),
                 priority=wd.get("priority", 0),
             )
-            conditions = _build_conditions(rule.get("conditions", []))
+            conditions = build_conditions(rule.get("conditions", []))
             if conditions:
                 engine.register(WidgetTriggerRule(widget=widget_def, conditions=conditions, match_mode=rule.get("match_mode", "all")))
 

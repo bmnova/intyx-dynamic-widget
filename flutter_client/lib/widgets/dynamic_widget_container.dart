@@ -104,14 +104,8 @@ class DynamicWidgetContainer extends StatelessWidget {
       );
     }
 
-    // Wrap in host app's color scheme if provided
-    if (colorScheme != null) {
-      final baseTheme = Theme.of(context);
-      result = Theme(
-        data: baseTheme.copyWith(colorScheme: colorScheme),
-        child: result,
-      );
-    }
+    // Note: Individual widgets are already wrapped with the colorScheme
+    // via ResponsiveWidgetWrapper, so we don't need to wrap again here.
 
     return result;
   }

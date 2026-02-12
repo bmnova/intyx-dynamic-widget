@@ -1,6 +1,8 @@
 """Configuration for the Dynamic Widget MCP server."""
 
+import logging
 import os
+import sys
 
 # Firebase
 FIREBASE_PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID", "intyx-dynamic-widget")
@@ -15,6 +17,43 @@ HOROSCOPE_POLL_INTERVAL = int(os.environ.get("HOROSCOPE_POLL_INTERVAL", "3600"))
 OPENWEATHER_API_KEY = os.environ.get("OPENWEATHER_API_KEY", "")
 OPENWEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5"
 
+# AI
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_MODEL_NAME = os.environ.get("GEMINI_MODEL_NAME", "gemini-2.0-flash")
+
 # Server
 HOST = os.environ.get("HOST", "0.0.0.0")
 PORT = int(os.environ.get("PORT", "8080"))
+
+# Rate limiting
+RATE_LIMIT_DEFAULT = os.environ.get("RATE_LIMIT_DEFAULT", "200 per hour")
+RATE_LIMIT_AI = os.environ.get("RATE_LIMIT_AI", "30 per minute")
+
+# API key for server endpoints (set to empty string to disable auth)
+SERVER_API_KEY = os.environ.get("INTYX_SERVER_API_KEY", "")
+
+
+def validate_config() -> None:
+    """Validate that required environment variables are set. Call at startup."""
+    logger = logging.getLogger(__name__)
+    warnings = []
+
+    if not FIREBASE_CREDENTIALS_PATH:
+        warnings.append("FIREBASE_CREDENTIALS_PATH not set — using Application Default Credentials")
+
+    if not OPENWEATHER_API_KEY:
+        warnings.append("OPENWEATHER_API_KEY not set — weather data will use placeholders")
+
+    if not GEMINI_API_KEY:
+        warnings.append("GEMINI_API_KEY not set — AI features will be unavailable")
+
+    if not SERVER_API_KEY:
+        warnings.append("INTYX_SERVER_API_KEY not set — API endpoints are unprotected")
+
+    for w in warnings:
+        logger.warning("CONFIG: %s", w)
+
+    # Hard failures
+    if not FIREBASE_PROJECT_ID:
+        logger.error("FIREBASE_PROJECT_ID is required but not set")
+        sys.exit(1)

@@ -66,11 +66,26 @@ class WeatherSource:
     @staticmethod
     def from_api_response(raw: dict[str, Any]) -> WeatherData:
         """Parse a raw API response dict into a WeatherData instance."""
+        temperature = raw.get("temperature", 0)
+        humidity = raw.get("humidity", 0)
+
+        # Type-check: ensure numeric values
+        if isinstance(temperature, str):
+            try:
+                temperature = float(temperature)
+            except (ValueError, TypeError):
+                temperature = 0.0
+        if isinstance(humidity, str):
+            try:
+                humidity = float(humidity)
+            except (ValueError, TypeError):
+                humidity = 0.0
+
         return WeatherData(
             location=raw.get("location", ""),
-            temperature=float(raw.get("temperature", 0)),
+            temperature=float(temperature),
             condition=WeatherCondition(raw.get("condition", "sunny")),
-            humidity=float(raw.get("humidity", 0)),
+            humidity=float(humidity),
         )
 
     @staticmethod
@@ -83,14 +98,24 @@ class WeatherSource:
                 condition=WeatherCondition.CLOUDY, humidity=0.0,
             )
 
-        resp = requests.get(
-            f"{OPENWEATHER_BASE_URL}/weather",
-            params={"q": city, "appid": OPENWEATHER_API_KEY, "units": units},
-            timeout=10,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        return WeatherSource._parse_owm_current(data)
+        try:
+            resp = requests.get(
+                f"{OPENWEATHER_BASE_URL}/weather",
+                params={"q": city, "appid": OPENWEATHER_API_KEY, "units": units},
+                timeout=10,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return WeatherSource._parse_owm_current(data)
+        except requests.ConnectionError:
+            logger.exception("Weather API connection error for %s", city)
+            raise
+        except requests.Timeout:
+            logger.exception("Weather API timeout for %s", city)
+            raise
+        except requests.HTTPError as e:
+            logger.exception("Weather API HTTP error for %s: %s", city, e.response.status_code if e.response else "unknown")
+            raise
 
     @staticmethod
     def fetch_forecast(city: str, units: str = "metric") -> list[dict[str, Any]]:
@@ -98,13 +123,17 @@ class WeatherSource:
         if not OPENWEATHER_API_KEY:
             return []
 
-        resp = requests.get(
-            f"{OPENWEATHER_BASE_URL}/forecast",
-            params={"q": city, "appid": OPENWEATHER_API_KEY, "units": units},
-            timeout=10,
-        )
-        resp.raise_for_status()
-        data = resp.json()
+        try:
+            resp = requests.get(
+                f"{OPENWEATHER_BASE_URL}/forecast",
+                params={"q": city, "appid": OPENWEATHER_API_KEY, "units": units},
+                timeout=10,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        except (requests.ConnectionError, requests.Timeout, requests.HTTPError):
+            logger.exception("Weather forecast API error for %s", city)
+            raise
 
         forecasts = []
         for item in data.get("list", []):
@@ -132,14 +161,18 @@ class WeatherSource:
                 condition=WeatherCondition.CLOUDY, humidity=0.0,
             )
 
-        resp = requests.get(
-            f"{OPENWEATHER_BASE_URL}/weather",
-            params={"lat": lat, "lon": lon, "appid": OPENWEATHER_API_KEY, "units": units},
-            timeout=10,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        return WeatherSource._parse_owm_current(data)
+        try:
+            resp = requests.get(
+                f"{OPENWEATHER_BASE_URL}/weather",
+                params={"lat": lat, "lon": lon, "appid": OPENWEATHER_API_KEY, "units": units},
+                timeout=10,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return WeatherSource._parse_owm_current(data)
+        except (requests.ConnectionError, requests.Timeout, requests.HTTPError):
+            logger.exception("Weather API error for coords (%.2f, %.2f)", lat, lon)
+            raise
 
     @staticmethod
     def _parse_owm_current(data: dict[str, Any]) -> WeatherData:

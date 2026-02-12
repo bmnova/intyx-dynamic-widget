@@ -40,6 +40,16 @@ class LayoutConfig {
     );
   }
 
+  /// Parses JSON edge insets values into Flutter [EdgeInsets].
+  ///
+  /// Supported formats:
+  /// - `num`        — uniform value for all sides, e.g. `16`
+  /// - `[num]`      — same as above, e.g. `[16]`
+  /// - `[v, h]`     — vertical / horizontal, e.g. `[8, 16]`
+  /// - `[t, r, b, l]` — top, right, bottom, left (CSS order)
+  ///
+  /// **Note:** The 4-value order follows CSS convention: top, right, bottom, left.
+  /// This is different from Flutter's `EdgeInsets.fromLTRB(left, top, right, bottom)`.
   static EdgeInsets? _parseEdgeInsets(dynamic value) {
     if (value == null) return null;
     if (value is num) {
@@ -54,6 +64,7 @@ class LayoutConfig {
         );
       }
       if (value.length == 4) {
+        // CSS order: top, right, bottom, left → LTRB(left, top, right, bottom)
         return EdgeInsets.fromLTRB(
           (value[3] as num).toDouble(), // left
           (value[0] as num).toDouble(), // top

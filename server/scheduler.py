@@ -1,4 +1,4 @@
-"""Periodic data source polling scheduler."""
+"""Periodic data source polling scheduler with exponential backoff."""
 
 from __future__ import annotations
 
@@ -18,6 +18,10 @@ from server.data_sources.weather_source import WeatherSource
 from server import firebase_client as fb
 
 logger = logging.getLogger(__name__)
+
+# Backoff config
+_MAX_BACKOFF = 300  # 5 minutes cap
+_INITIAL_BACKOFF = 2
 
 
 class DataScheduler:
@@ -45,6 +49,7 @@ class DataScheduler:
         logger.info("DataScheduler stopped")
 
     async def _poll_weather(self) -> None:
+        consecutive_failures = 0
         while self._running:
             try:
                 data = await self.weather_source.fetch()
@@ -56,11 +61,17 @@ class DataScheduler:
                     "timestamp": data.timestamp,
                 })
                 logger.info("Weather data updated: %s %.1f°C", data.location, data.temperature)
+                consecutive_failures = 0
             except Exception:
-                logger.exception("Weather poll failed")
+                consecutive_failures += 1
+                backoff = min(_INITIAL_BACKOFF ** consecutive_failures, _MAX_BACKOFF)
+                logger.exception("Weather poll failed (attempt %d, backoff %ds)", consecutive_failures, backoff)
+                await asyncio.sleep(backoff)
+                continue
             await asyncio.sleep(WEATHER_POLL_INTERVAL)
 
     async def _poll_news(self) -> None:
+        consecutive_failures = 0
         while self._running:
             try:
                 data = await self.news_source.fetch()
@@ -77,8 +88,13 @@ class DataScheduler:
                     "timestamp": time.time(),
                 })
                 logger.info("News data updated: %d items", len(data))
+                consecutive_failures = 0
             except Exception:
-                logger.exception("News poll failed")
+                consecutive_failures += 1
+                backoff = min(_INITIAL_BACKOFF ** consecutive_failures, _MAX_BACKOFF)
+                logger.exception("News poll failed (attempt %d, backoff %ds)", consecutive_failures, backoff)
+                await asyncio.sleep(backoff)
+                continue
             await asyncio.sleep(NEWS_POLL_INTERVAL)
 
     async def _poll_horoscope(self) -> None:
@@ -86,6 +102,7 @@ class DataScheduler:
             "aries", "taurus", "gemini", "cancer", "leo", "virgo",
             "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces",
         ]
+        consecutive_failures = 0
         while self._running:
             try:
                 results: dict[str, Any] = {}
@@ -99,6 +116,11 @@ class DataScheduler:
                     }
                 fb.cache_data("horoscope", {"signs": results, "timestamp": time.time()})
                 logger.info("Horoscope data updated: %d signs", len(results))
+                consecutive_failures = 0
             except Exception:
-                logger.exception("Horoscope poll failed")
+                consecutive_failures += 1
+                backoff = min(_INITIAL_BACKOFF ** consecutive_failures, _MAX_BACKOFF)
+                logger.exception("Horoscope poll failed (attempt %d, backoff %ds)", consecutive_failures, backoff)
+                await asyncio.sleep(backoff)
+                continue
             await asyncio.sleep(HOROSCOPE_POLL_INTERVAL)

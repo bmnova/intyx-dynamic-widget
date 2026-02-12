@@ -3,53 +3,53 @@
 ## Server
 
 ### Guvenlik
-- [ ] Tum endpoint'lere API key validation middleware ekle (su an hepsi public)
-- [ ] Rate limiting ekle (Flask-Limiter vb.)
-- [ ] API key'leri request body yerine Authorization header'da tasi
-- [ ] Widget create endpoint'ine input validation ekle (type, params schema kontrolu)
-- [ ] Weather input'unda type checking ekle (temperature/humidity string gelebilir)
+- [x] Tum endpoint'lere API key validation middleware ekle (su an hepsi public)
+- [x] Rate limiting ekle (Flask-Limiter vb.)
+- [x] API key'leri request body yerine Authorization header'da tasi
+- [x] Widget create endpoint'ine input validation ekle (type, params schema kontrolu)
+- [x] Weather input'unda type checking ekle (temperature/humidity string gelebilir)
 
 ### Stabilite
-- [ ] Firebase init'i thread-safe yap (threading.Lock ile double-check locking)
-- [ ] Scheduler'a exponential backoff ekle (API hatalari icin)
-- [ ] Weather source'a connection/timeout exception handling ekle
-- [ ] Gemini JSON parsing'de edge case duzelt (markdown fence'siz "```" gelirse IndexError)
-- [ ] Eksik environment variable'lar icin startup validation ekle (fail fast)
+- [x] Firebase init'i thread-safe yap (threading.Lock ile double-check locking)
+- [x] Scheduler'a exponential backoff ekle (API hatalari icin)
+- [x] Weather source'a connection/timeout exception handling ekle
+- [x] Gemini JSON parsing'de edge case duzelt (markdown fence'siz "```" gelirse IndexError)
+- [x] Eksik environment variable'lar icin startup validation ekle (fail fast)
 
 ### Veri Butunlugu
-- [ ] Firestore array update'lerinde transaction kullan (race condition onleme)
-- [ ] record_interaction ve record_user_action action type'larini ayir (ayni array'de karisiyor)
+- [x] Firestore array update'lerinde transaction kullan (race condition onleme)
+- [x] record_interaction ve record_user_action action type'larini ayir (ayni array'de karisiyor)
 
 ### Performans
-- [ ] Widget ve trigger rule sorgularina pagination ekle
-- [ ] Firestore index'leri olustur
+- [x] Widget ve trigger rule sorgularina pagination ekle
+- [x] Firestore index'leri olustur
 
 ### Kod Kalitesi
-- [ ] `_build_conditions` fonksiyonunu routes.widgets'tan shared utility'ye tasi (MCP'den import ediliyor)
-- [ ] Gemini model adini config.py'a tasi (su an hardcoded "gemini-2.0-flash")
+- [x] `_build_conditions` fonksiyonunu routes.widgets'tan shared utility'ye tasi (MCP'den import ediliyor)
+- [x] Gemini model adini config.py'a tasi (su an hardcoded "gemini-2.0-flash")
 
 ## Web (React)
 
 ### Guvenlik & UX
-- [ ] Pricing.jsx'te alert() yerine duzgun UI notification kullan
-- [ ] 404 route ekle (bilinmeyen path'lerde bos sayfa gorunuyor)
-- [ ] Protected route wrapper ekle (Dashboard/AgentTasks icin route seviyesinde guard)
+- [x] Pricing.jsx'te alert() yerine duzgun UI notification kullan
+- [x] 404 route ekle (bilinmeyen path'lerde bos sayfa gorunuyor)
+- [x] Protected route wrapper ekle (Dashboard/AgentTasks icin route seviyesinde guard)
 
 ### Genel
-- [ ] SEO meta tag'leri ekle (description, Open Graph, Twitter card)
+- [x] SEO meta tag'leri ekle (description, Open Graph, Twitter card)
 - [ ] Accessibility iyilestir (aria-label, keyboard navigation)
 
 ## Flutter
 
 ### Genel
-- [ ] DynamicWidgetContainer'daki redundant Theme wrapping'i kaldir (ResponsiveWidgetWrapper zaten yapiyor)
-- [ ] License validation'a strict mode ekle (production'da offline fallback'i kapatan flag)
-- [ ] EdgeInsets parsing sirasini dokumante et (CSS standardindan farkli)
+- [x] DynamicWidgetContainer'daki redundant Theme wrapping'i kaldir (ResponsiveWidgetWrapper zaten yapiyor)
+- [x] License validation'a strict mode ekle (production'da offline fallback'i kapatan flag)
+- [x] EdgeInsets parsing sirasini dokumante et (CSS standardindan farkli)
 
 ## Altyapi
 
 ### Production Oncesi
 - [ ] Paddle odeme entegrasyonunu tamamla
-- [ ] CI/CD pipeline kur
-- [ ] Logging ve monitoring ekle
-- [ ] Firestore security rules yaz
+- [x] CI/CD pipeline kur
+- [x] Logging ve monitoring ekle
+- [x] Firestore security rules yaz

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 import time
 from typing import Any
 
@@ -12,20 +13,26 @@ from server.config import FIREBASE_CREDENTIALS_PATH, FIREBASE_PROJECT_ID
 
 
 _db = None
+_db_lock = threading.Lock()
 
 
 def init_firebase() -> None:
-    """Initialize Firebase Admin SDK."""
+    """Initialize Firebase Admin SDK (thread-safe with double-check locking)."""
     global _db
     if _db is not None:
         return
 
-    cred = None
-    if FIREBASE_CREDENTIALS_PATH:
-        cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
+    with _db_lock:
+        # Double-check after acquiring lock
+        if _db is not None:
+            return
 
-    firebase_admin.initialize_app(cred, {"projectId": FIREBASE_PROJECT_ID})
-    _db = firestore.client()
+        cred = None
+        if FIREBASE_CREDENTIALS_PATH:
+            cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
+
+        firebase_admin.initialize_app(cred, {"projectId": FIREBASE_PROJECT_ID})
+        _db = firestore.client()
 
 
 def get_db() -> firestore.Client:
@@ -38,10 +45,14 @@ def get_db() -> firestore.Client:
 # --- Widget Operations ---
 
 
-def get_widgets() -> list[dict[str, Any]]:
-    """Fetch all widget definitions from Firestore."""
+def get_widgets(limit: int = 100, offset: int = 0) -> list[dict[str, Any]]:
+    """Fetch widget definitions from Firestore with pagination."""
     db = get_db()
-    docs = db.collection("widgets").stream()
+    query = db.collection("widgets").order_by("created_at", direction=firestore.Query.DESCENDING)
+    if offset > 0:
+        query = query.offset(offset)
+    query = query.limit(limit)
+    docs = query.stream()
     return [{**doc.to_dict(), "id": doc.id} for doc in docs]
 
 
@@ -86,10 +97,14 @@ def delete_widget(widget_id: str) -> bool:
 # --- Trigger Rule Operations ---
 
 
-def get_trigger_rules() -> list[dict[str, Any]]:
-    """Fetch all trigger rules from Firestore."""
+def get_trigger_rules(limit: int = 100, offset: int = 0) -> list[dict[str, Any]]:
+    """Fetch trigger rules from Firestore with pagination."""
     db = get_db()
-    docs = db.collection("trigger_rules").stream()
+    query = db.collection("trigger_rules")
+    if offset > 0:
+        query = query.offset(offset)
+    query = query.limit(limit)
+    docs = query.stream()
     return [{**doc.to_dict(), "id": doc.id} for doc in docs]
 
 
@@ -115,35 +130,46 @@ def delete_trigger_rule(rule_id: str) -> bool:
 
 
 def get_user_state(user_id: str) -> dict[str, Any]:
-    """Get user state (dismissed widgets, interactions)."""
+    """Get user state (dismissed widgets, interactions, user actions)."""
     db = get_db()
     doc = db.collection("user_states").document(user_id).get()
     if doc.exists:
         return doc.to_dict()
-    return {"dismissed_widgets": [], "actions": []}
+    return {"dismissed_widgets": [], "interactions": [], "user_actions": []}
 
 
 def dismiss_widget(user_id: str, widget_id: str) -> None:
-    """Record that a user dismissed a widget."""
+    """Record that a user dismissed a widget (transactional)."""
     db = get_db()
     doc_ref = db.collection("user_states").document(user_id)
-    doc = doc_ref.get()
 
-    if doc.exists:
-        state = doc.to_dict()
-        dismissed = state.get("dismissed_widgets", [])
-        if widget_id not in dismissed:
-            dismissed.append(widget_id)
-            doc_ref.update({"dismissed_widgets": dismissed})
-    else:
-        doc_ref.set({"dismissed_widgets": [widget_id], "actions": []})
+    @firestore.transactional
+    def _dismiss(transaction):
+        snapshot = doc_ref.get(transaction=transaction)
+        if snapshot.exists:
+            state = snapshot.to_dict()
+            dismissed = state.get("dismissed_widgets", [])
+            if widget_id not in dismissed:
+                dismissed.append(widget_id)
+                transaction.update(doc_ref, {"dismissed_widgets": dismissed})
+        else:
+            transaction.set(doc_ref, {
+                "dismissed_widgets": [widget_id],
+                "interactions": [],
+                "user_actions": [],
+            })
+
+    _dismiss(db.transaction())
 
 
 def record_interaction(user_id: str, widget_id: str, action: str) -> None:
-    """Record a user interaction with a widget."""
+    """Record a user interaction with a widget (transactional).
+
+    Interactions are widget-specific events (tap, dismiss, expand, etc.)
+    stored in a separate 'interactions' array.
+    """
     db = get_db()
     doc_ref = db.collection("user_states").document(user_id)
-    doc = doc_ref.get()
 
     interaction = {
         "widget_id": widget_id,
@@ -151,17 +177,30 @@ def record_interaction(user_id: str, widget_id: str, action: str) -> None:
         "timestamp": time.time(),
     }
 
-    if doc.exists:
-        state = doc.to_dict()
-        actions = state.get("actions", [])
-        actions.append(interaction)
-        doc_ref.update({"actions": actions})
-    else:
-        doc_ref.set({"dismissed_widgets": [], "actions": [interaction]})
+    @firestore.transactional
+    def _record(transaction):
+        snapshot = doc_ref.get(transaction=transaction)
+        if snapshot.exists:
+            state = snapshot.to_dict()
+            interactions = state.get("interactions", [])
+            interactions.append(interaction)
+            transaction.update(doc_ref, {"interactions": interactions})
+        else:
+            transaction.set(doc_ref, {
+                "dismissed_widgets": [],
+                "interactions": [interaction],
+                "user_actions": [],
+            })
+
+    _record(db.transaction())
 
 
 def record_user_action(user_id: str, action: str, metadata: dict[str, Any] | None = None) -> None:
-    """Record a generic user action for trigger evaluation."""
+    """Record a generic user action for trigger evaluation (transactional).
+
+    User actions are app-level behaviour events (page_view, purchase, signup)
+    used by the trigger engine. Stored in a separate 'user_actions' array.
+    """
     db = get_db()
     doc_ref = db.collection("user_states").document(user_id)
 
@@ -169,14 +208,22 @@ def record_user_action(user_id: str, action: str, metadata: dict[str, Any] | Non
     if metadata:
         entry["metadata"] = metadata
 
-    doc = doc_ref.get()
-    if doc.exists:
-        state = doc.to_dict()
-        actions = state.get("actions", [])
-        actions.append(entry)
-        doc_ref.update({"actions": actions})
-    else:
-        doc_ref.set({"dismissed_widgets": [], "actions": [entry]})
+    @firestore.transactional
+    def _record(transaction):
+        snapshot = doc_ref.get(transaction=transaction)
+        if snapshot.exists:
+            state = snapshot.to_dict()
+            user_actions = state.get("user_actions", [])
+            user_actions.append(entry)
+            transaction.update(doc_ref, {"user_actions": user_actions})
+        else:
+            transaction.set(doc_ref, {
+                "dismissed_widgets": [],
+                "interactions": [],
+                "user_actions": [entry],
+            })
+
+    _record(db.transaction())
 
 
 # --- Data Cache Operations ---

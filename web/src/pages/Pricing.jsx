@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
+import Toast from '../components/Toast';
 
 const PLANS = [
   {
@@ -58,6 +59,7 @@ const PLANS = [
 export default function Pricing() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(null);
+  const [toast, setToast] = useState(null);
 
   const handlePurchase = async (planId) => {
     setLoading(planId);
@@ -87,7 +89,7 @@ export default function Pricing() {
       navigate('/dashboard');
     } catch (err) {
       console.error('License creation failed:', err);
-      alert(err.message || 'Bir hata olustu, tekrar deneyin.');
+      setToast({ type: 'error', message: err.message || 'Bir hata olustu, tekrar deneyin.' });
     } finally {
       setLoading(null);
     }
@@ -154,6 +156,14 @@ export default function Pricing() {
       </div>
 
       <div style={{ height: 80 }} />
+
+      {toast && (
+        <Toast
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

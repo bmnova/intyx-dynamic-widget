@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import json
 import logging
-import os
+import re
 from typing import Any
 
 import google.generativeai as genai
 
 from server import firebase_client as fb
+from server.config import GEMINI_API_KEY, GEMINI_MODEL_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +99,8 @@ WIDGET_CATALOG = {
     ],
 }
 
+VALID_WIDGET_TYPES = {w["type"] for w in WIDGET_CATALOG["widgets"]}
+
 SYSTEM_PROMPT = """Sen bir mobil uygulama widget onerme asistanisin.
 Kullanicinin context'ine (hava durumu, konum, zaman, kullanici davranislari vs.) gore
 hangi widget'larin gosterilmesi gerektigine karar verirsin.
@@ -135,14 +138,31 @@ JSON formati:
 """
 
 
+def _strip_code_fences(text: str) -> str:
+    """Strip markdown code fences from AI response, handling edge cases."""
+    text = text.strip()
+    # Handle ```json or ``` at the start
+    if text.startswith("```"):
+        # Find the end of the first line (could be ```json, ```JSON, just ```)
+        first_newline = text.find("\n")
+        if first_newline != -1:
+            text = text[first_newline + 1:]
+        else:
+            # No newline — the whole thing is just ``` with no content
+            return text.lstrip("`")
+    # Strip trailing ```
+    if text.endswith("```"):
+        text = text[:-3]
+    return text.strip()
+
+
 class GeminiClient:
     """Wrapper around Google Generative AI SDK for widget operations."""
 
     def __init__(self) -> None:
-        api_key = os.environ.get("GEMINI_API_KEY", "")
-        if api_key:
-            genai.configure(api_key=api_key)
-        self._model = genai.GenerativeModel("gemini-2.0-flash")
+        if GEMINI_API_KEY:
+            genai.configure(api_key=GEMINI_API_KEY)
+        self._model = genai.GenerativeModel(GEMINI_MODEL_NAME)
 
     def suggest_widgets(self, context: dict[str, Any]) -> dict[str, Any]:
         """Suggest widgets based on user context."""
@@ -154,11 +174,7 @@ class GeminiClient:
             response = self._model.generate_content(
                 [{"role": "user", "parts": [{"text": system + "\n\n" + prompt}]}]
             )
-            text = response.text.strip()
-            # Strip markdown code fences if present
-            if text.startswith("```"):
-                text = text.split("\n", 1)[1]
-                text = text.rsplit("```", 1)[0]
+            text = _strip_code_fences(response.text)
             return json.loads(text)
         except Exception:
             logger.exception("Gemini suggest_widgets failed")
@@ -185,10 +201,7 @@ class GeminiClient:
 
         try:
             response = self._model.generate_content(prompt)
-            text = response.text.strip()
-            if text.startswith("```"):
-                text = text.split("\n", 1)[1]
-                text = text.rsplit("```", 1)[0]
+            text = _strip_code_fences(response.text)
             params = json.loads(text)
             return {"type": widget_type, "params": params}
         except Exception:

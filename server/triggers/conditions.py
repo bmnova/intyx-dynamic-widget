@@ -92,3 +92,39 @@ class DeveloperParamCondition(TriggerCondition):
 
     def evaluate(self, ctx: TriggerContext) -> bool:
         return ctx.developer_params.get(self.param_key) == self.param_value
+
+
+def build_conditions(raw_conditions: list[dict]) -> list[TriggerCondition]:
+    """Build TriggerCondition instances from raw config dicts.
+
+    Shared by both REST API routes and MCP server.
+    """
+    conditions: list[TriggerCondition] = []
+    for c in raw_conditions:
+        ctype = c.get("type")
+        if ctype == "seasonal":
+            conditions.append(SeasonalCondition(
+                event=c.get("event", ""),
+                start_date=c.get("start_date", ""),
+                end_date=c.get("end_date", ""),
+            ))
+        elif ctype == "weather":
+            condition = None
+            if c.get("condition"):
+                condition = WeatherCondition(c["condition"])
+            conditions.append(WeatherMatchCondition(
+                condition=condition,
+                min_temp=c.get("min_temp"),
+                max_temp=c.get("max_temp"),
+            ))
+        elif ctype == "user_action":
+            conditions.append(UserActionCondition(
+                action_pattern=c.get("action_pattern", ""),
+                min_occurrences=c.get("min_occurrences", 1),
+            ))
+        elif ctype == "developer_param":
+            conditions.append(DeveloperParamCondition(
+                param_key=c.get("param_key", ""),
+                param_value=c.get("param_value"),
+            ))
+    return conditions
