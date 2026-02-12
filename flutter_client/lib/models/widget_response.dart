@@ -198,12 +198,16 @@ class WidgetEntry {
   });
 
   factory WidgetEntry.fromJson(Map<String, dynamic> json) {
+    final rawParams = json['params'];
+    final rawCommon = json['common'];
     return WidgetEntry(
       id: json['id'] as String? ?? '',
       type: json['type'] as String,
-      params: json['params'] as Map<String, dynamic>? ?? {},
-      common: json['common'] != null
-          ? CommonParams.fromJson(json['common'] as Map<String, dynamic>)
+      params: rawParams is Map
+          ? Map<String, dynamic>.from(rawParams as Map)
+          : <String, dynamic>{},
+      common: rawCommon is Map
+          ? CommonParams.fromJson(Map<String, dynamic>.from(rawCommon as Map))
           : const CommonParams(),
     );
   }
@@ -223,11 +227,11 @@ class WidgetResponse {
 
   factory WidgetResponse.fromJson(Map<String, dynamic> json) {
     final list = json['widgets'] as List<dynamic>? ?? [];
-    return WidgetResponse(
-      widgets: list
-          .map((e) => WidgetEntry.fromJson(e as Map<String, dynamic>))
-          .toList()
-        ..sort((a, b) => b.common.priority.compareTo(a.common.priority)),
-    );
+    final widgets = list
+        .whereType<Map>()
+        .map((e) => WidgetEntry.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+    widgets.sort((a, b) => b.common.priority.compareTo(a.common.priority));
+    return WidgetResponse(widgets: widgets);
   }
 }
