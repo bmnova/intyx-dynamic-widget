@@ -1,11 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 
 export default function Dashboard() {
   const apiKey = localStorage.getItem('intyx_api_key');
-  const plan = localStorage.getItem('intyx_plan');
   const purchasedAt = localStorage.getItem('intyx_purchased_at');
   const [copied, setCopied] = useState(false);
+  const [licenseInfo, setLicenseInfo] = useState(null);
+  const [validating, setValidating] = useState(!!apiKey);
+
+  useEffect(() => {
+    if (!apiKey) return;
+    const validate = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/licenses/validate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ api_key: apiKey }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.valid) {
+            setLicenseInfo(data);
+            localStorage.setItem('intyx_plan', data.plan);
+          }
+        }
+      } catch (err) {
+        console.error('License validation failed:', err);
+      } finally {
+        setValidating(false);
+      }
+    };
+    validate();
+  }, []);
+
+  const plan = licenseInfo?.plan || localStorage.getItem('intyx_plan');
 
   if (!apiKey) {
     return (

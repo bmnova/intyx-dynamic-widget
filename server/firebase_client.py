@@ -198,3 +198,9 @@ def get_cached_data(source: str) -> dict[str, Any] | None:
     if doc.exists:
         return doc.to_dict().get("data")
     return None
+
+
+def delete_cached_data(source: str) -> None:
+    """Delete a cached data entry."""
+    db = get_db()
+    db.collection("data_cache").document(source).delete()

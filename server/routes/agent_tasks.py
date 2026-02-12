@@ -19,6 +19,19 @@ from server import firebase_client as fb
 agent_tasks_bp = Blueprint("agent_tasks", __name__, url_prefix="/api/agent-tasks")
 
 
+def _get_tasks(api_key: str) -> list[dict]:
+    """Get all tasks for an API key from cache."""
+    doc = fb.get_cached_data(f"agent_tasks:{api_key}")
+    if doc and isinstance(doc, dict):
+        return doc.get("tasks", [])
+    return []
+
+
+def _save_tasks(api_key: str, tasks: list[dict]) -> None:
+    """Save all tasks for an API key to cache."""
+    fb.cache_data(f"agent_tasks:{api_key}", {"tasks": tasks})
+
+
 @agent_tasks_bp.route("", methods=["POST"])
 def create_task():
     """Create a new agent task / persona definition.
@@ -38,12 +51,14 @@ def create_task():
     task_id = f"task_{uuid.uuid4().hex[:12]}"
     doc = {
         "id": task_id,
-        "api_key": api_key,
         "name": name or "Varsayilan Gorev",
         "task": task,
         "active": True,
     }
-    fb.cache_data(f"agent_task:{api_key}:{task_id}", doc)
+
+    tasks = _get_tasks(api_key)
+    tasks.append(doc)
+    _save_tasks(api_key, tasks)
 
     return jsonify({"id": task_id, "status": "created"}), 201
 
@@ -58,9 +73,8 @@ def list_tasks():
     if not api_key:
         return jsonify({"error": "api_key required"}), 400
 
-    # Fetch all tasks for this key
-    tasks = fb.get_cached_data(f"agent_tasks_list:{api_key}") or {"tasks": []}
-    return jsonify(tasks)
+    tasks = _get_tasks(api_key)
+    return jsonify({"tasks": tasks})
 
 
 @agent_tasks_bp.route("/<task_id>", methods=["PUT"])
@@ -71,18 +85,23 @@ def update_task(task_id: str):
     if not api_key:
         return jsonify({"error": "api_key required"}), 400
 
-    existing = fb.get_cached_data(f"agent_task:{api_key}:{task_id}")
-    if not existing:
+    tasks = _get_tasks(api_key)
+    found = False
+    for t in tasks:
+        if t["id"] == task_id:
+            if "task" in data:
+                t["task"] = data["task"]
+            if "name" in data:
+                t["name"] = data["name"]
+            if "active" in data:
+                t["active"] = data["active"]
+            found = True
+            break
+
+    if not found:
         return jsonify({"error": "Task not found"}), 404
 
-    if "task" in data:
-        existing["task"] = data["task"]
-    if "name" in data:
-        existing["name"] = data["name"]
-    if "active" in data:
-        existing["active"] = data["active"]
-
-    fb.cache_data(f"agent_task:{api_key}:{task_id}", existing)
+    _save_tasks(api_key, tasks)
     return jsonify({"status": "updated"})
 
 
@@ -93,7 +112,13 @@ def delete_task(task_id: str):
     if not api_key:
         return jsonify({"error": "api_key required"}), 400
 
-    fb.cache_data(f"agent_task:{api_key}:{task_id}", None)
+    tasks = _get_tasks(api_key)
+    new_tasks = [t for t in tasks if t["id"] != task_id]
+
+    if len(new_tasks) == len(tasks):
+        return jsonify({"error": "Task not found"}), 404
+
+    _save_tasks(api_key, new_tasks)
     return jsonify({"status": "deleted"})
 
 
@@ -112,11 +137,11 @@ def resolve_task():
     if not api_key or not task_id:
         return jsonify({"error": "api_key and task_id required"}), 400
 
-    task_doc = fb.get_cached_data(f"agent_task:{api_key}:{task_id}")
+    tasks = _get_tasks(api_key)
+    task_doc = next((t for t in tasks if t["id"] == task_id), None)
     if not task_doc:
         return jsonify({"error": "Task not found"}), 404
 
-    # Inject the developer's task description into the AI context
     enriched_context = {
         **context,
         "developer_task": task_doc["task"],

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../config';
 
 const EXAMPLE_TASKS = [
   'Benim appim bir kiyafet uygulamasi, kullaniciya hava durumuna gore oneri kombinler gosteren widget goster',
@@ -14,66 +15,117 @@ export default function AgentTasks() {
   const [newTask, setNewTask] = useState('');
   const [taskName, setTaskName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [testResult, setTestResult] = useState(null);
   const [testing, setTesting] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Load tasks from localStorage (in prod: from API)
-    const saved = localStorage.getItem('intyx_agent_tasks');
-    if (saved) setTasks(JSON.parse(saved));
+    if (!apiKey) return;
+    fetchTasks();
   }, []);
 
-  const saveTasks = (updated) => {
-    setTasks(updated);
-    localStorage.setItem('intyx_agent_tasks', JSON.stringify(updated));
+  const fetchTasks = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/agent-tasks?api_key=${encodeURIComponent(apiKey)}`);
+      if (!res.ok) throw new Error('Gorevler yuklenemedi');
+      const data = await res.json();
+      setTasks(data.tasks || []);
+    } catch (err) {
+      console.error('Failed to fetch tasks:', err);
+      // Fallback to localStorage
+      try {
+        const saved = localStorage.getItem('intyx_agent_tasks');
+        if (saved) setTasks(JSON.parse(saved));
+      } catch (_) { /* ignore parse errors */ }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!newTask.trim()) return;
     setSaving(true);
-    const task = {
-      id: `task_${crypto.randomUUID().slice(0, 12)}`,
-      name: taskName.trim() || 'Gorev',
-      task: newTask.trim(),
-      active: true,
-      created_at: new Date().toISOString(),
-    };
-    saveTasks([...tasks, task]);
-    setNewTask('');
-    setTaskName('');
-    setSaving(false);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/agent-tasks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api_key: apiKey,
+          task: newTask.trim(),
+          name: taskName.trim() || 'Gorev',
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Gorev olusturulamadi');
+      }
+      setNewTask('');
+      setTaskName('');
+      await fetchTasks();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = (id) => {
-    saveTasks(tasks.filter((t) => t.id !== id));
+  const handleDelete = async (id) => {
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/agent-tasks/${id}?api_key=${encodeURIComponent(apiKey)}`,
+        { method: 'DELETE' }
+      );
+      if (!res.ok) throw new Error('Silinemedi');
+      setTasks(tasks.filter((t) => t.id !== id));
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
-  const handleToggle = (id) => {
-    saveTasks(tasks.map((t) => (t.id === id ? { ...t, active: !t.active } : t)));
+  const handleToggle = async (id) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/agent-tasks/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ api_key: apiKey, active: !task.active }),
+      });
+      if (!res.ok) throw new Error('Guncellenemedi');
+      setTasks(tasks.map((t) => (t.id === id ? { ...t, active: !t.active } : t)));
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
-  const handleTest = (task) => {
+  const handleTest = async (task) => {
     setTesting(task.id);
     setTestResult(null);
-    // Simulate AI response (in prod: POST /api/agent-tasks/resolve)
-    setTimeout(() => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/agent-tasks/resolve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api_key: apiKey,
+          task_id: task.id,
+          context: { current_date: new Date().toISOString() },
+        }),
+      });
+      if (!res.ok) throw new Error('Test basarisiz');
+      const data = await res.json();
+      setTestResult({ taskId: task.id, widgets: data.widgets || [] });
+    } catch (err) {
       setTestResult({
         taskId: task.id,
-        widgets: [
-          {
-            id: 'w_demo_1',
-            type: 'contextual',
-            params: { title: 'AI Onerisi', content: `"${task.task}" gorevi icin widget onerisi burada gosterilecek`, icon: 'info', source: 'AI Agent' },
-          },
-          {
-            id: 'w_demo_2',
-            type: 'banner',
-            params: { text: 'Bu gorev aktif oldugunda uygulamanizda gosterilecek', emoji: '🤖', style: 'gradient' },
-          },
-        ],
+        widgets: [],
+        error: err.message,
       });
+    } finally {
       setTesting(null);
-    }, 1500);
+    }
   };
 
   if (!apiKey) {
@@ -92,6 +144,13 @@ export default function AgentTasks() {
       <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
         Uygulamanizi tanimlayin, AI agent bu goreve gore hangi widget'lari gosterecegine karar versin.
       </p>
+
+      {error && (
+        <div style={styles.errorBanner}>
+          {error}
+          <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 700, marginLeft: 12 }}>✕</button>
+        </div>
+      )}
 
       {/* Create new task */}
       <div style={styles.card}>
@@ -139,7 +198,9 @@ export default function AgentTasks() {
       </div>
 
       {/* Task list */}
-      {tasks.length > 0 && (
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Yukleniyor...</div>
+      ) : tasks.length > 0 && (
         <div style={{ marginTop: 32 }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Kayitli Gorevler</h2>
           {tasks.map((task) => (
@@ -178,10 +239,16 @@ export default function AgentTasks() {
               {/* Test result */}
               {testResult && testResult.taskId === task.id && (
                 <div style={styles.testResult}>
-                  <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>AI Agent Ciktisi (Demo)</div>
-                  <pre style={styles.codeBlock}>
-                    {JSON.stringify(testResult.widgets, null, 2)}
-                  </pre>
+                  <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+                    AI Agent Ciktisi {testResult.error ? '(Hata)' : ''}
+                  </div>
+                  {testResult.error ? (
+                    <p style={{ color: '#ef4444', fontSize: 13 }}>{testResult.error}</p>
+                  ) : (
+                    <pre style={styles.codeBlock}>
+                      {JSON.stringify(testResult.widgets, null, 2)}
+                    </pre>
+                  )}
                 </div>
               )}
             </div>
@@ -222,6 +289,18 @@ const styles = {
     border: '1px solid var(--border)',
     borderRadius: 'var(--radius)',
     padding: 24,
+  },
+  errorBanner: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '10px 16px',
+    marginBottom: 16,
+    background: 'rgba(239,68,68,0.1)',
+    border: '1px solid rgba(239,68,68,0.3)',
+    borderRadius: 8,
+    color: '#ef4444',
+    fontSize: 14,
   },
   input: {
     width: '100%',
