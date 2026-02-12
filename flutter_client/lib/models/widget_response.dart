@@ -3,7 +3,7 @@ library;
 
 import 'dart:ui';
 
-import 'package:flutter/material.dart' show ColorScheme, Brightness;
+import 'package:flutter/material.dart' show Brightness, ColorScheme, EdgeInsets;
 
 /// Layout configuration for responsive widget sizing.
 class LayoutConfig {
