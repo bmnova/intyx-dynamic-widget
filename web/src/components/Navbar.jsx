@@ -4,6 +4,7 @@ const links = [
   { to: '/', label: 'Home' },
   { to: '/pricing', label: 'Pricing' },
   { to: '/dashboard', label: 'Dashboard' },
+  { to: '/widget-studio', label: 'Studio' },
   { to: '/agent-tasks', label: 'Agent Tasks' },
 ];
 

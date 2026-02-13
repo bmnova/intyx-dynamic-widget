@@ -141,6 +141,24 @@ void main() {
         </div>
       </div>
 
+      {/* Quick actions */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginTop: 16 }}>
+        <Link to="/widget-studio" style={{ ...styles.actionCard, textDecoration: 'none', color: 'inherit' }}>
+          <div style={{ fontSize: 28, marginBottom: 8 }}>🎨</div>
+          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Widget Studio</div>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+            Select widget types, write prompts, preview AI-generated widgets
+          </div>
+        </Link>
+        <Link to="/agent-tasks" style={{ ...styles.actionCard, textDecoration: 'none', color: 'inherit' }}>
+          <div style={{ fontSize: 28, marginBottom: 8 }}>🤖</div>
+          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Agent Tasks</div>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+            Create reusable AI tasks for automatic widget generation
+          </div>
+        </Link>
+      </div>
+
       {/* Quick stats placeholder */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 16 }}>
         <div style={styles.statCard}>
@@ -252,6 +270,14 @@ const styles = {
     overflow: 'auto',
     whiteSpace: 'pre',
     margin: 0,
+  },
+  actionCard: {
+    background: 'var(--bg-card)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius)',
+    padding: 24,
+    transition: 'border-color 0.2s',
+    cursor: 'pointer',
   },
   statCard: {
     background: 'var(--bg-card)',
