@@ -20,6 +20,11 @@ firebase-debug.log
 functions/node_modules/
 functions/.env
 
+# Web
+web/node_modules/
+web/dist/
+node_modules/
+
 # IDE
 .idea/
 .vscode/
