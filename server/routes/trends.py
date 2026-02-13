@@ -89,7 +89,7 @@ def suggest_from_trends():
     }
 
     # Let AI suggest widgets based on trends
-    from server.ai.gemini_client import GeminiClient
-    client = GeminiClient()
+    from server.ai.gemini_client import get_gemini_client
+    client = get_gemini_client()
     result = client.suggest_widgets(enriched_context)
     return jsonify(result)

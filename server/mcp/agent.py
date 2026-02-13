@@ -1,4 +1,8 @@
-"""Gemini-backed agent that orchestrates MCP tools (weather, Firebase, holidays, etc.)."""
+"""Gemini-backed agent that orchestrates MCP tools via function calling.
+
+Tool declarations are auto-generated from tool_definitions.py so they
+never drift out of sync with the MCP server.
+"""
 
 from __future__ import annotations
 
@@ -10,73 +14,12 @@ from typing import Any, Callable, Coroutine
 import requests
 
 from server.config import GEMINI_API_KEY, GEMINI_MODEL_NAME
+from server.mcp.tool_definitions import get_gemini_declarations
 
 logger = logging.getLogger(__name__)
 
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 MAX_TURNS = 10
-
-# Tool declarations for Gemini function calling
-GEMINI_FUNCTION_DECLARATIONS = [
-    {
-        "name": "get_current_weather",
-        "description": "Get current weather for a city (temperature, condition, humidity).",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "city": {"type": "string", "description": "City name (e.g. Istanbul, London)"},
-                "units": {"type": "string", "enum": ["metric", "imperial"]},
-            },
-            "required": ["city"],
-        },
-    },
-    {
-        "name": "get_weather_forecast",
-        "description": "Get 5-day weather forecast for a city.",
-        "parameters": {
-            "type": "object",
-            "properties": {"city": {"type": "string"}, "units": {"type": "string", "enum": ["metric", "imperial"]}},
-            "required": ["city"],
-        },
-    },
-    {
-        "name": "list_widgets",
-        "description": "List all widget definitions in Firebase.",
-        "parameters": {"type": "object", "properties": {}},
-    },
-    {
-        "name": "get_widget_catalog",
-        "description": "Get the full widget catalog (all available widget types and parameters).",
-        "parameters": {"type": "object", "properties": {}},
-    },
-    {
-        "name": "get_today_holidays",
-        "description": "Get special days / holidays for today. Optional country code (e.g. TR).",
-        "parameters": {"type": "object", "properties": {"country": {"type": "string"}}},
-    },
-    {
-        "name": "get_upcoming_holidays",
-        "description": "Get upcoming holidays in the next N days (default 30).",
-        "parameters": {
-            "type": "object",
-            "properties": {"days_ahead": {"type": "integer"}, "country": {"type": "string"}},
-        },
-    },
-    {
-        "name": "get_data_sources",
-        "description": "Get current cached data from all sources (weather, news, horoscope, trends).",
-        "parameters": {"type": "object", "properties": {}},
-    },
-    {
-        "name": "suggest_widgets",
-        "description": "Use AI to suggest widgets for a given context (e.g. weather, developer_task).",
-        "parameters": {
-            "type": "object",
-            "properties": {"context": {"type": "object", "description": "Context for widget suggestion"}},
-            "required": ["context"],
-        },
-    },
-]
 
 
 def _parse_tool_result(text: str) -> Any:
@@ -90,18 +33,23 @@ async def run_ask(
     query: str,
     tool_runner: Callable[[str, dict[str, Any]], Coroutine[Any, Any, str]],
 ) -> str:
-    """
-    Run Gemini with function calling. tool_runner(name, args) is async and returns
-    the tool result text (e.g. from MCP call_tool). Returns final model response.
+    """Run Gemini with function calling.
+
+    tool_runner(name, args) is async and returns the tool result text
+    (e.g. from MCP call_tool). Returns the final model response.
     """
     if not GEMINI_API_KEY:
         return "GEMINI_API_KEY not set; cannot run ask agent."
 
     url = f"{GEMINI_API_URL}/{GEMINI_MODEL_NAME}:generateContent?key={GEMINI_API_KEY}"
+
+    # Auto-generated from the shared tool_definitions
+    declarations = get_gemini_declarations()
+
     contents = [{"role": "user", "parts": [{"text": query}]}]
     body = {
         "contents": contents,
-        "tools": [{"function_declarations": GEMINI_FUNCTION_DECLARATIONS}],
+        "tools": [{"function_declarations": declarations}],
         "tool_config": {"function_calling_config": {"mode": "AUTO", "allowed_function_names": []}},
     }
 

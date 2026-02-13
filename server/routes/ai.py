@@ -4,18 +4,9 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
 
-from server.ai.gemini_client import GeminiClient
+from server.ai.gemini_client import get_gemini_client
 
 ai_bp = Blueprint("ai", __name__, url_prefix="/api/ai")
-
-_client: GeminiClient | None = None
-
-
-def _get_client() -> GeminiClient:
-    global _client
-    if _client is None:
-        _client = GeminiClient()
-    return _client
 
 
 @ai_bp.route("/suggest-widget", methods=["POST"])
@@ -25,7 +16,7 @@ def suggest_widget():
     if not data:
         return jsonify({"error": "Context required"}), 400
 
-    client = _get_client()
+    client = get_gemini_client()
     result = client.suggest_widgets(data)
     return jsonify(result)
 
@@ -42,6 +33,6 @@ def generate_content():
     if not widget_type:
         return jsonify({"error": "widget_type required"}), 400
 
-    client = _get_client()
+    client = get_gemini_client()
     result = client.generate_widget_content(widget_type, context)
     return jsonify(result)

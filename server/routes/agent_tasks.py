@@ -148,7 +148,7 @@ def resolve_task():
         "task_name": task_doc.get("name", ""),
     }
 
-    from server.ai.gemini_client import GeminiClient
-    client = GeminiClient()
+    from server.ai.gemini_client import get_gemini_client
+    client = get_gemini_client()
     result = client.suggest_widgets(enriched_context)
     return jsonify(result)

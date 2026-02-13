@@ -168,7 +168,10 @@ def _strip_code_fences(text: str) -> str:
 
 
 class GeminiClient:
-    """Wrapper around Google Generative AI SDK for widget operations."""
+    """Wrapper around Google Generative AI SDK for widget operations.
+
+    Use get_gemini_client() for a shared singleton instance.
+    """
 
     def __init__(self) -> None:
         if GEMINI_API_KEY:
@@ -218,3 +221,15 @@ class GeminiClient:
         except Exception:
             logger.exception("Gemini generate_widget_content failed")
             return {"error": "Content generation failed"}
+
+
+# Module-level singleton
+_gemini_client: GeminiClient | None = None
+
+
+def get_gemini_client() -> GeminiClient:
+    """Return the shared GeminiClient singleton."""
+    global _gemini_client
+    if _gemini_client is None:
+        _gemini_client = GeminiClient()
+    return _gemini_client
