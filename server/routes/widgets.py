@@ -15,12 +15,49 @@ widgets_bp = Blueprint("widgets", __name__, url_prefix="/api/widgets")
 
 @widgets_bp.route("", methods=["GET"])
 def list_widgets():
-    """List all active widgets, optionally filtered by user context.
-
-    Query params:
-        user_id: Filter out dismissed widgets for this user
-        limit: Max widgets to return (default 100)
-        offset: Skip N widgets for pagination (default 0)
+    """List all active widgets.
+    ---
+    tags:
+      - Widgets
+    summary: List widgets
+    description: Returns all active widgets sorted by priority, optionally
+      filtered by user (dismissed widgets are excluded).
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: user_id
+        in: query
+        type: string
+        required: false
+        description: Exclude widgets already dismissed by this user.
+      - name: limit
+        in: query
+        type: integer
+        required: false
+        default: 100
+        description: Maximum number of widgets to return (capped at 500).
+      - name: offset
+        in: query
+        type: integer
+        required: false
+        default: 0
+        description: Number of widgets to skip for pagination.
+    responses:
+      200:
+        description: Widget list.
+        schema:
+          type: object
+          properties:
+            widgets:
+              type: array
+              items:
+                type: object
+            limit:
+              type: integer
+            offset:
+              type: integer
+      401:
+        description: Unauthorized.
     """
     user_id = request.args.get("user_id")
     limit = min(int(request.args.get("limit", 100)), 500)
@@ -39,7 +76,27 @@ def list_widgets():
 
 @widgets_bp.route("/<widget_id>", methods=["GET"])
 def get_widget(widget_id: str):
-    """Get a single widget definition."""
+    """Get a single widget definition.
+    ---
+    tags:
+      - Widgets
+    summary: Get widget by ID
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: widget_id
+        in: path
+        type: string
+        required: true
+        description: Widget identifier.
+    responses:
+      200:
+        description: Widget definition.
+        schema:
+          type: object
+      404:
+        description: Widget not found.
+    """
     widget = fb.get_widget(widget_id)
     if not widget:
         return jsonify({"error": "Widget not found"}), 404
@@ -48,7 +105,58 @@ def get_widget(widget_id: str):
 
 @widgets_bp.route("", methods=["POST"])
 def create_widget():
-    """Create a new widget definition."""
+    """Create a new widget definition.
+    ---
+    tags:
+      - Widgets
+    summary: Create widget
+    security:
+      - BearerAuth: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - type
+            - params
+          properties:
+            type:
+              type: string
+              description: Widget type (e.g. banner, promotional, countdown_banner).
+              example: banner
+            params:
+              type: object
+              description: Widget-type-specific parameters.
+              example:
+                title: "Summer Sale"
+                subtitle: "Up to 50% off"
+            priority:
+              type: integer
+              description: Display priority (higher = shown first).
+              default: 0
+            color_palette:
+              type: object
+              description: Optional color overrides for this widget.
+            license_key:
+              type: string
+              description: Your intyx_* API key for plan-limit enforcement.
+    responses:
+      201:
+        description: Widget created.
+        schema:
+          type: object
+          properties:
+            id:
+              type: string
+            message:
+              type: string
+      400:
+        description: Validation error.
+      403:
+        description: Widget limit reached for the current plan.
+    """
     data = request.get_json()
     if not data:
         return jsonify({"error": "Request body required"}), 400
@@ -98,7 +206,30 @@ def create_widget():
 
 @widgets_bp.route("/<widget_id>", methods=["PUT"])
 def update_widget(widget_id: str):
-    """Update an existing widget."""
+    """Update an existing widget.
+    ---
+    tags:
+      - Widgets
+    summary: Update widget
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: widget_id
+        in: path
+        type: string
+        required: true
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          description: Fields to update (partial update supported).
+    responses:
+      200:
+        description: Widget updated.
+      404:
+        description: Widget not found.
+    """
     data = request.get_json()
     if not data:
         return jsonify({"error": "Request body required"}), 400
@@ -110,7 +241,24 @@ def update_widget(widget_id: str):
 
 @widgets_bp.route("/<widget_id>", methods=["DELETE"])
 def delete_widget(widget_id: str):
-    """Delete a widget."""
+    """Delete a widget.
+    ---
+    tags:
+      - Widgets
+    summary: Delete widget
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: widget_id
+        in: path
+        type: string
+        required: true
+    responses:
+      200:
+        description: Widget deleted.
+      404:
+        description: Widget not found.
+    """
     if fb.delete_widget(widget_id):
         return jsonify({"message": "Widget deleted"})
     return jsonify({"error": "Widget not found"}), 404
@@ -118,7 +266,70 @@ def delete_widget(widget_id: str):
 
 @widgets_bp.route("/evaluate", methods=["POST"])
 def evaluate_triggers():
-    """Evaluate trigger rules against provided context and return matching widgets."""
+    """Evaluate trigger rules against context and return matching widgets.
+    ---
+    tags:
+      - Widgets
+    summary: Evaluate triggers
+    description: Runs all stored trigger rules against the provided context
+      and returns widgets whose conditions are satisfied.
+    security:
+      - BearerAuth: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - current_date
+          properties:
+            current_date:
+              type: string
+              description: ISO 8601 date string (e.g. "2026-02-23").
+              example: "2026-02-23"
+            weather:
+              type: object
+              description: Current weather data.
+              properties:
+                location:
+                  type: string
+                temperature:
+                  type: number
+                condition:
+                  type: string
+                  enum: [sunny, cloudy, rainy, snowy, stormy, windy]
+                humidity:
+                  type: number
+            user_actions:
+              type: array
+              items:
+                type: object
+              description: Recent user actions for trigger evaluation.
+            user_preferences:
+              type: object
+              description: Arbitrary key/value preferences.
+            dismissed_widgets:
+              type: array
+              items:
+                type: string
+              description: Widget IDs the user has already dismissed.
+            developer_params:
+              type: object
+              description: Custom parameters passed by the host app.
+    responses:
+      200:
+        description: Matching widgets.
+        schema:
+          type: object
+          properties:
+            widgets:
+              type: array
+              items:
+                type: object
+      400:
+        description: Context required.
+    """
     data = request.get_json()
     if not data:
         return jsonify({"error": "Context required"}), 400
@@ -203,7 +414,37 @@ def evaluate_triggers():
 
 @widgets_bp.route("/<widget_id>/dismiss", methods=["POST"])
 def dismiss_widget(widget_id: str):
-    """Dismiss a widget for a user."""
+    """Dismiss a widget for a user.
+    ---
+    tags:
+      - Widgets
+    summary: Dismiss widget
+    description: Marks the widget as dismissed for the given user so it
+      is excluded from future list and evaluate responses.
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: widget_id
+        in: path
+        type: string
+        required: true
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - user_id
+          properties:
+            user_id:
+              type: string
+              example: user_abc123
+    responses:
+      200:
+        description: Widget dismissed.
+      400:
+        description: user_id required.
+    """
     data = request.get_json() or {}
     user_id = data.get("user_id")
     if not user_id:
@@ -215,7 +456,44 @@ def dismiss_widget(widget_id: str):
 
 @widgets_bp.route("/<widget_id>/interact", methods=["POST"])
 def interact_widget(widget_id: str):
-    """Record a widget interaction."""
+    """Record a widget interaction.
+    ---
+    tags:
+      - Widgets
+    summary: Record interaction
+    description: Persists an interaction event (tap, expand, link_click, etc.)
+      for analytics and trigger history.
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: widget_id
+        in: path
+        type: string
+        required: true
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - user_id
+          properties:
+            user_id:
+              type: string
+              example: user_abc123
+            action:
+              type: string
+              default: tap
+              description: >
+                Interaction type. Common values: tap, dismiss, expand,
+                link_click, impression.
+              example: tap
+    responses:
+      200:
+        description: Interaction recorded.
+      400:
+        description: user_id required.
+    """
     data = request.get_json() or {}
     user_id = data.get("user_id")
     action = data.get("action", "tap")
@@ -230,7 +508,43 @@ def interact_widget(widget_id: str):
 
 @widgets_bp.route("/user/action", methods=["POST"])
 def record_user_action():
-    """Record a user action for trigger evaluation."""
+    """Record a user action for trigger evaluation.
+    ---
+    tags:
+      - Widgets
+    summary: Record user action
+    description: Stores an app-level behaviour event (page_view, purchase,
+      signup, etc.) that the trigger engine can reference in conditions.
+    security:
+      - BearerAuth: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - user_id
+            - action
+          properties:
+            user_id:
+              type: string
+              example: user_abc123
+            action:
+              type: string
+              example: purchase_completed
+            metadata:
+              type: object
+              description: Optional key/value pairs attached to the event.
+              example:
+                product_id: "prod_99"
+                amount: 49.99
+    responses:
+      200:
+        description: Action recorded.
+      400:
+        description: user_id and action required.
+    """
     data = request.get_json() or {}
     user_id = data.get("user_id")
     action = data.get("action")

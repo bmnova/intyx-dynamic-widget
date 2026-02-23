@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 
+from flasgger import Swagger
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
@@ -42,6 +43,49 @@ def create_app() -> Flask:
 
     app = Flask(__name__)
     CORS(app)
+
+    # ── OpenAPI / Swagger UI ─────────────────────────────────────────
+    Swagger(
+        app,
+        config={
+            "headers": [],
+            "specs": [
+                {
+                    "endpoint": "apispec",
+                    "route": "/api/docs/apispec.json",
+                    "rule_filter": lambda rule: True,
+                    "model_filter": lambda tag: True,
+                }
+            ],
+            "swagger_ui": True,
+            "specs_route": "/api/docs/",
+        },
+        template={
+            "swagger": "2.0",
+            "info": {
+                "title": "Intyx Dynamic Widget API",
+                "description": (
+                    "AI-driven dynamic widget system for Flutter apps.\n\n"
+                    "**Authentication**: All endpoints except `/api/health`, "
+                    "`/api/licenses/validate`, and `/api/licenses` require a "
+                    "Bearer API key in the `Authorization` header."
+                ),
+                "version": "1.0.0",
+                "contact": {"email": "support@intyx.dev"},
+            },
+            "securityDefinitions": {
+                "BearerAuth": {
+                    "type": "apiKey",
+                    "name": "Authorization",
+                    "in": "header",
+                    "description": "Format: `Bearer <api_key>`",
+                }
+            },
+            "security": [{"BearerAuth": []}],
+            "consumes": ["application/json"],
+            "produces": ["application/json"],
+        },
+    )
 
     # Rate limiting
     limiter = Limiter(

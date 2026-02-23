@@ -14,9 +14,45 @@ licenses_bp = Blueprint("licenses", __name__, url_prefix="/api/licenses")
 @licenses_bp.route("", methods=["POST"])
 def create_license():
     """Create a new license key after successful purchase.
-
-    Expected body: { "plan": "starter|pro|enterprise", "email": "..." }
-    In production this is called by the Paddle webhook, not directly.
+    ---
+    tags:
+      - Licenses
+    summary: Create license key
+    description: >
+      Generates an `intyx_*` API key for a given plan. In production this
+      endpoint is called by the Paddle webhook — not directly by clients.
+      It is listed as a public path so no auth header is required.
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - plan
+          properties:
+            plan:
+              type: string
+              enum: [starter, pro, enterprise]
+              example: pro
+            email:
+              type: string
+              format: email
+              example: user@example.com
+    responses:
+      201:
+        description: License created.
+        schema:
+          type: object
+          properties:
+            api_key:
+              type: string
+              example: intyx_pro_a1b2c3d4e5f6g7h8
+            plan:
+              type: string
+              example: pro
+      400:
+        description: Invalid plan.
     """
     data = request.get_json() or {}
     plan = data.get("plan")
@@ -42,9 +78,58 @@ def create_license():
 
 @licenses_bp.route("/validate", methods=["POST"])
 def validate_license():
-    """Validate a license key — called by the Flutter SDK on init.
-
-    Expected body: { "api_key": "intyx_..." }
+    """Validate a license key.
+    ---
+    tags:
+      - Licenses
+    summary: Validate license
+    description: >
+      Called by the Flutter SDK on `IntyxDynamicWidget.init()` to confirm
+      the API key is active and retrieve plan details. This endpoint is
+      public (no auth header required).
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - api_key
+          properties:
+            api_key:
+              type: string
+              description: License key starting with `intyx_`.
+              example: intyx_pro_a1b2c3d4e5f6g7h8
+    responses:
+      200:
+        description: License is valid.
+        schema:
+          type: object
+          properties:
+            valid:
+              type: boolean
+              example: true
+            plan:
+              type: string
+              example: pro
+            widget_limit:
+              type: integer
+              description: Max widgets allowed (-1 = unlimited).
+              example: 10
+            mau_limit:
+              type: integer
+              description: Max monthly active users (-1 = unlimited).
+              example: 50000
+      401:
+        description: Invalid or inactive license key.
+        schema:
+          type: object
+          properties:
+            valid:
+              type: boolean
+              example: false
+            error:
+              type: string
     """
     data = request.get_json() or {}
     api_key = data.get("api_key", "")

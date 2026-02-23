@@ -11,7 +11,46 @@ ai_bp = Blueprint("ai", __name__, url_prefix="/api/ai")
 
 @ai_bp.route("/suggest-widget", methods=["POST"])
 def suggest_widget():
-    """Use AI to suggest which widget(s) to show based on context."""
+    """Use AI to suggest which widget(s) to show based on context.
+    ---
+    tags:
+      - AI
+    summary: AI widget suggestion
+    description: >
+      Sends the provided context to the Gemini AI model and returns a list
+      of widgets best suited for the current user moment. Rate-limited more
+      strictly than other endpoints.
+    security:
+      - BearerAuth: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          description: >
+            Arbitrary context object. Common keys include `app_type`,
+            `user_segment`, `current_screen`, `developer_task`, and
+            contextual data such as weather or recent events.
+          example:
+            app_type: e-commerce
+            user_segment: returning_buyer
+            current_screen: checkout
+    responses:
+      200:
+        description: AI-suggested widgets.
+        schema:
+          type: object
+          properties:
+            widgets:
+              type: array
+              items:
+                type: object
+      400:
+        description: Context required.
+      429:
+        description: Rate limit exceeded.
+    """
     data = request.get_json()
     if not data:
         return jsonify({"error": "Context required"}), 400
@@ -23,7 +62,45 @@ def suggest_widget():
 
 @ai_bp.route("/generate-content", methods=["POST"])
 def generate_content():
-    """Use AI to generate widget content."""
+    """Use AI to generate content for a specific widget type.
+    ---
+    tags:
+      - AI
+    summary: AI content generation
+    description: >
+      Given a widget type and context, the AI generates ready-to-use
+      params (title, subtitle, image prompt, CTA text, etc.).
+    security:
+      - BearerAuth: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - widget_type
+          properties:
+            widget_type:
+              type: string
+              description: One of the supported widget type identifiers.
+              example: banner
+            context:
+              type: object
+              description: Additional context to personalise the generated content.
+              example:
+                season: summer
+                brand_tone: playful
+    responses:
+      200:
+        description: Generated widget content.
+        schema:
+          type: object
+      400:
+        description: widget_type required.
+      429:
+        description: Rate limit exceeded.
+    """
     data = request.get_json()
     if not data:
         return jsonify({"error": "Request body required"}), 400
