@@ -1,60 +1,51 @@
-# Backend (server) deploy rehberi
+# Backend (server) Deploy Rehberi
 
-Bu dokümanda **server/** (Flask) uygulamasının buluta deploy edilmesi anlatılıyor. Önce [API-KEYS.md](./API-KEYS.md) ile gerekli ortam değişkenlerini hazırlayın.
+Bu dokumanda **server/** (Flask) uygulamasinin buluta deploy edilmesi anlatiliyor. Once [API-KEYS.md](./API-KEYS.md) ile gerekli ortam degiskenlerini hazirlayin.
 
 ---
 
-## Gemini ve MCP nerede koşar?
+## Bilesenler Nerede Kosar?
+
+| Bilesen | Nerede kosar | Not |
+|---------|-------------|-----|
+| **Flask API** | Cloud Run / Railway / Docker | Tum widget, license, AI, trend endpoint'leri |
+| **Gemini API** | Google sunuculari | Sadece API key ile HTTP cagrisi |
+| **MCP server** | Gelistirici makinesi (Cursor'in yaninda) | stdio, deploy edilmez |
 
 ### Gemini
 
-**Gemini**, Google’ın buluttaki bir API’si; kendi sunucularında çalışır. Bizim kod sadece `GEMINI_API_KEY` ile HTTP üzerinden çağrı yapar.
+Gemini, Google'in buluttaki API'si. Bizim kod sadece `GEMINI_API_KEY` ile HTTP uzerinden cagri yapar. Flask'i nereye deploy ederseniz Gemini cagrilari o ortamdan Google'a gider. Ayri bir Gemini sunucusu kurmak gerekmez.
 
-- **Gemini’yi kim kullanıyor?** Flask uygulaması (widget önerisi, agent görevleri, trendler) ve MCP server (tool’lar).
-- **Nerede koşar?** Flask’ı nereye deploy ederseniz (Cloud Run, Railway, vb.) Gemini çağrıları **o ortamdan** Google’a gider. Ayrı bir “Gemini sunucusu” kurmanız gerekmez; sadece deploy ettiğiniz backend’e `GEMINI_API_KEY` env’ini verin.
+### MCP Server
 
-### MCP server
-
-**MCP server** (Model Context Protocol) stdio ile çalışan **ayrı bir process**. Cursor / Claude Desktop gibi MCP client’lar bunu kendi subprocess’i olarak başlatır.
-
-- **Nerede koşar?** MCP server buluta deploy edilmez. **Cursor’ın (veya kullandığınız IDE’nin) çalıştığı makinede** çalışır. Cursor, `mcp_config` içindeki tanıma göre `python -m server.mcp` komutunu çalıştırır ve stdin/stdout üzerinden konuşur.
-- **Tek sunucu, tüm araçlar:** `server.mcp` tek MCP sunucusu; içinde **Firebase** (widgets, trigger rules, data cache, trends), **Weather** (get_current_weather, get_weather_forecast, get_weather_by_coords), **Holidays** (get_today_holidays, get_upcoming_holidays, suggest_widget_for_holiday, vb.) ve **Gemini orkestrasyonu** (tool: **ask**) vardır. `ask` ile doğal dilde soru sorarsınız; Gemini gerekirse weather, Firebase ve holidays araçlarını kendisi çağırıp cevabı birleştirir.
-- **Gereksinimler:** Python, proje kodu, env: `FIREBASE_PROJECT_ID`, `GEMINI_API_KEY` (zorunlu), isteğe bağlı `FIREBASE_CREDENTIALS_PATH`, `OPENWEATHER_API_KEY` (weather için). Örnek: proje kökündeki `mcp_config.example.json` → Cursor MCP ayarlarına kopyalayıp `cwd` ve `env` değerlerini düzenleyin.
-
-| Bileşen | Nerede koşar | Not |
-|--------|----------------|-----|
-| **Gemini API** | Google sunucuları | Sadece API key ile çağrı |
-| **Gemini kullanan kod** | Flask ile aynı yerde (Cloud Run vb.) | Backend deploy edildiği yerde |
-| **MCP server** | Geliştirici makinesi (Cursor’ın yanında) | stdio, deploy edilmez |
-
-**Alternatif:** Gemini’yi **Firebase Cloud Functions** içinde çalıştırmak isterseniz bkz. [FIREBASE-FUNCTIONS-GEMINI.md](./FIREBASE-FUNCTIONS-GEMINI.md). O zaman AI endpoint’leri Firebase’de koşar; Flask sadece widget/license API’lerinde kalabilir.
+MCP server stdio ile calisan ayri bir process. Cursor/Claude Desktop gibi MCP client'lar bunu kendi subprocess'i olarak baslatir. **Buluta deploy edilmez**, gelistirici makinesinde calisir. Detay: [MCP-SERVER.md](./MCP-SERVER.md).
 
 ---
 
-## 1. Google Cloud Run (önerilen)
+## 1. Google Cloud Run (onerilen)
 
-Firebase kullandığınız için aynı GCP projesinde Cloud Run ile backend’i çalıştırabilirsiniz. **FIREBASE_CREDENTIALS_PATH** vermenize gerek yok; Cloud Run ortamında Application Default Credentials kullanılır.
+Firebase kullandiginiz icin ayni GCP projesinde Cloud Run ile backend'i calistirabilirsiniz.
 
-### Ön koşul
+### On kosul
 
-- [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) yüklü ve `gcloud auth login` yapılmış olsun.
-- GCP projeniz Firebase projesiyle aynı olsun (veya `FIREBASE_PROJECT_ID` ile Firebase proje ID’sini verin).
+- [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) yuklu ve `gcloud auth login` yapilmis
+- GCP projeniz Firebase projesiyle ayni
 
-### Adımlar
+### Adimlar
 
-1. **Proje ve region seçin**
+1. **Proje ve region secin**
    ```bash
    gcloud config set project YOUR_GCP_PROJECT_ID
    export REGION=europe-west1
    ```
 
-2. **Container’ı build edin ve Artifact Registry’e push edin**
+2. **Container'i build edin ve push edin**
    ```bash
-   # İlk kez: Artifact Registry API ve repo oluşturma
+   # Ilk kez: API ve repo olusturma
    gcloud services enable artifactregistry.googleapis.com run.googleapis.com
    gcloud artifacts repositories create intyx-repo --repository-format=docker --location=$REGION
 
-   # Build (repo kökünden)
+   # Build (repo kokunden)
    docker build -t $REGION-docker.pkg.dev/$(gcloud config get-value project)/intyx-repo/intyx-server:latest .
 
    # Auth ve push
@@ -62,7 +53,7 @@ Firebase kullandığınız için aynı GCP projesinde Cloud Run ile backend’i 
    docker push $REGION-docker.pkg.dev/$(gcloud config get-value project)/intyx-repo/intyx-server:latest
    ```
 
-3. **Cloud Run servisini deploy edin**
+3. **Cloud Run deploy**
    ```bash
    IMAGE=$REGION-docker.pkg.dev/$(gcloud config get-value project)/intyx-repo/intyx-server:latest
 
@@ -71,69 +62,114 @@ Firebase kullandığınız için aynı GCP projesinde Cloud Run ile backend’i 
      --region $REGION \
      --platform managed \
      --allow-unauthenticated \
-     --set-env-vars "FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID,GEMINI_API_KEY=YOUR_GEMINI_KEY"
+     --set-env-vars "FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID,GEMINI_API_KEY=YOUR_GEMINI_KEY,INTYX_SERVER_API_KEY=YOUR_SECRET_KEY"
    ```
 
-   **TODO:** Test sonrası `INTYX_SERVER_API_KEY` ekleyin (API koruma).
-
-   İsteğe bağlı env’leri de ekleyin (virgülle ayırarak tek `--set-env-vars` veya ayrı ayrı):
+   Opsiyonel env'leri de ekleyin:
    ```bash
-   --set-env-vars "OPENWEATHER_API_KEY=xxx"
+   --set-env-vars "OPENWEATHER_API_KEY=xxx,NEWS_API_KEY=yyy,PADDLE_WEBHOOK_SECRET=zzz,SENTRY_DSN=sentry_dsn"
    ```
 
-   **Sadece kimlik doğrulamalı erişim** isterseniz `--allow-unauthenticated` kaldırıp `--no-allow-unauthenticated` kullanın.
-
-4. **URL’i alın**
+4. **URL'i alin**
    ```bash
    gcloud run services describe intyx-dynamic-widget --region $REGION --format 'value(status.url)'
    ```
-   Bu URL’i web frontend’te `VITE_API_URL` olarak kullanın.
+   Bu URL'i web frontend'te `VITE_API_URL` olarak kullanin.
 
-### Ortam değişkenleri özeti (Cloud Run)
+### Ortam degiskenleri ozeti (Cloud Run)
 
-| Değişken | Zorunlu | Açıklama |
+| Degisken | Zorunlu | Aciklama |
 |----------|---------|----------|
 | `FIREBASE_PROJECT_ID` | Evet | Firebase/GCP proje ID |
-| `GEMINI_API_KEY` | Evet | AI widget önerileri ve agent görevleri |
-| `INTYX_SERVER_API_KEY` | TODO (test sonrası) | API koruma anahtarı — şimdilik atlanıyor |
-| `FIREBASE_CREDENTIALS_PATH` | Hayır | Cloud Run’da boş bırakın (ADC kullanılır) |
-| `OPENWEATHER_API_KEY` | Hayır | Hava durumu |
-| `TWITTER_BEARER_TOKEN` | Hayır | Trend verisi |
+| `GEMINI_API_KEY` | Evet | AI widget onerileri ve agent gorevleri |
+| `INTYX_SERVER_API_KEY` | Onerilen | API koruma anahtari |
+| `FIREBASE_CREDENTIALS_PATH` | Hayir | Cloud Run'da bos birakin (ADC) |
+| `OPENWEATHER_API_KEY` | Hayir | Hava durumu |
+| `NEWS_API_KEY` | Hayir | Haber verisi |
+| `TWITTER_BEARER_TOKEN` | Hayir | Trend verisi |
+| `PADDLE_WEBHOOK_SECRET` | Hayir | Paddle odeme dogrulama |
+| `SENTRY_DSN` | Hayir | Hata takip |
 
 ---
 
 ## 2. Railway / Render / Fly.io
 
-Dockerfile kullanarak herhangi bir container platformunda da çalıştırabilirsiniz.
+Dockerfile kullanarak herhangi bir container platformunda calistirabilirsiniz.
 
-- **Railway:** Repo bağlayın → Root directory boş, Dockerfile’ı kullanın → Environment variables ekleyin → Deploy.
-- **Render:** New → Web Service → Repo seçin → Docker → Env vars ekleyin.
-- **Fly.io:** `fly launch` → Dockerfile otomatik seçilir → `fly secrets set FIREBASE_PROJECT_ID=... GEMINI_API_KEY=...` ile key’leri verin. (TODO: Test sonrası `INTYX_SERVER_API_KEY` ekleyin.)
+- **Railway:** Repo baglayin → Dockerfile kullanin → Environment variables ekleyin → Deploy.
+- **Render:** New → Web Service → Repo secin → Docker → Env vars ekleyin.
+- **Fly.io:** `fly launch` → `fly secrets set FIREBASE_PROJECT_ID=... GEMINI_API_KEY=... INTYX_SERVER_API_KEY=...`
 
-Firebase için **FIREBASE_CREDENTIALS_PATH** kullanacaksanız, service account JSON içeriğini platformun “secret / file” özelliğiyle dosya olarak monte edin veya JSON’ı base64 ile env’e koyup uygulama başlangıcında dosyaya yazan küçük bir script kullanın (güvenliği platform dokümantasyonuna göre ayarlayın).
+Firebase icin `FIREBASE_CREDENTIALS_PATH` kullanacaksaniz, service account JSON icerigini platformun "secret/file" ozelligiyle dosya olarak monte edin.
 
 ---
 
-## 3. Yerel test (Docker)
+## 3. Yerel Test (Docker)
 
 ```bash
 docker build -t intyx-server .
 docker run -p 8080:8080 \
   -e FIREBASE_PROJECT_ID=intyx-dynamic-widget \
+  -e GEMINI_API_KEY=your-gemini-key \
   -e INTYX_SERVER_API_KEY=test-key \
   intyx-server
 ```
 
-Tarayıcıda `http://localhost:8080/api/health` → `{"status":"ok",...}` dönmeli.
+Tarayicida `http://localhost:8080/api/health` → `{"status":"ok","service":"intyx-dynamic-widget"}` donmeli.
 
 ---
 
-## 4. Aktive etme kontrolü
+## 4. Yerel Test (Docker'siz)
 
-Deploy sonrası:
+```bash
+cd server
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+# .env icine GEMINI_API_KEY yaz
+python -m server.app
+```
 
-1. **Health:** `curl https://YOUR_CLOUD_RUN_URL/api/health`
-2. **Lisans (auth yoksa):** `curl -X POST https://YOUR_URL/api/licenses -H "Content-Type: application/json" -d '{"plan":"starter"}'`
-3. **Auth varken:** `Authorization: Bearer YOUR_INTYX_SERVER_API_KEY` header’ı ile istek atın.
+---
 
-Eksik key’ler için log’larda uyarı göreceksiniz (weather placeholder, AI unavailable vb.). Tüm key’lerin listesi için [API-KEYS.md](./API-KEYS.md) dosyasına bakın.
+## 5. Deploy Sonrasi Kontrol
+
+```bash
+# Health check
+curl https://YOUR_URL/api/health
+
+# Lisans olustur (public endpoint)
+curl -X POST https://YOUR_URL/api/licenses \
+  -H "Content-Type: application/json" \
+  -d '{"plan":"starter"}'
+
+# Auth ile istek (server key)
+curl https://YOUR_URL/api/widgets \
+  -H "Authorization: Bearer YOUR_INTYX_SERVER_API_KEY"
+
+# Auth ile istek (license key)
+curl https://YOUR_URL/api/widgets \
+  -H "Authorization: Bearer intyx_xxxxx"
+```
+
+Eksik key'ler icin log'larda uyari goreceksiniz. Tum key'lerin listesi: [API-KEYS.md](./API-KEYS.md).
+
+---
+
+## Dockerfile Detay
+
+```dockerfile
+FROM python:3.12-slim
+WORKDIR /app
+COPY server/requirements.txt ./server/
+RUN pip install --no-cache-dir -r server/requirements.txt
+COPY server/ ./server/
+ENV PORT=8080
+EXPOSE 8080
+CMD exec gunicorn --bind 0.0.0.0:${PORT} --workers 1 --threads 4 server.app:app --capture-output
+```
+
+- Gunicorn ile production-grade WSGI
+- 1 worker, 4 thread (Cloud Run icin yeterli — scale horizontally)
+- `server.app:app` — Flask app entry point

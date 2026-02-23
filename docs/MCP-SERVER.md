@@ -1,73 +1,122 @@
-# MCP Server — Tek sunucu, Weather + Firebase + Holidays + Gemini
+# MCP Server Rehberi
 
-Tek bir MCP sunucusu (`python -m server.mcp`) ile **weather**, **Firebase** (widgets, trigger rules, cache, trends), **holidays** ve **Gemini** hepsi bir arada kullanılır. Gemini, **ask** tool’u ile bu araçları orkestre eder.
+Tek bir MCP sunucusu (`python -m server.mcp`) ile **widget yonetimi**, **hava durumu**, **tatil/ozel gunler**, **trendler**, **data source'lar** ve **Gemini AI orkestrasyonu** hepsi bir arada kullanilir.
 
 ---
 
-## Araçlar (tools)
+## Mimari
+
+```
+Cursor / Claude Desktop (MCP Client)
+        |
+        | stdin/stdout (MCP protocol)
+        |
+   server/mcp/server.py (MCP Server)
+        |
+        +-- tool_definitions.py   ← 20 tool tanimi (single source of truth)
+        |
+        +-- handlers/
+        |    ├── widget_handlers.py   (CRUD + trigger)
+        |    ├── weather_handlers.py  (OpenWeatherMap)
+        |    ├── holiday_handlers.py  (tatil/ozel gunler)
+        |    ├── trend_handlers.py    (viral trendler)
+        |    └── ai_handlers.py       (data sources + AI suggest)
+        |
+        +-- agent.py → Gemini AI (ask tool — tool orchestration)
+```
+
+### Handler Registry Pattern
+
+Tool'lar `tool_definitions.py`'da tanimlanir, handler'lar domain modullere ayrilir. `server.py` bunlari bir registry dict ile birlestirir. Herhangi bir handler hata verse bile sunucu dusmez (global error wrapper).
+
+### Single Source of Truth
+
+`tool_definitions.py` hem MCP server (list_tools/call_tool) hem de Gemini agent (function declarations) tarafindan kullanilir. Boylece tool tanimlari asla senkrondan cikmaz.
+
+---
+
+## Araclar (20 Tool)
 
 | Kategori | Tool'lar |
 |----------|----------|
-| **Firebase** | create_widget, list_widgets, update_widget, delete_widget, create_trigger_rule, evaluate_triggers, get_data_sources, get_widget_catalog, get_trends, suggest_widgets, suggest_from_trends |
-| **Weather** | get_current_weather, get_weather_forecast, get_weather_by_coords |
-| **Holidays** | get_today_holidays, get_holidays_by_date, get_upcoming_holidays, get_holidays_for_month, suggest_widget_for_holiday |
-| **Gemini agent** | **ask** — Doğal dilde soru/istek; Gemini gerekirse weather, Firebase ve holidays araçlarını çağırıp cevabı verir. |
+| **Widget** | `create_widget`, `list_widgets`, `update_widget`, `delete_widget`, `create_trigger_rule`, `evaluate_triggers`, `get_widget_catalog` |
+| **Weather** | `get_current_weather`, `get_weather_forecast`, `get_weather_by_coords` |
+| **Holidays** | `get_today_holidays`, `get_holidays_by_date`, `get_upcoming_holidays`, `get_holidays_for_month`, `suggest_widget_for_holiday` |
+| **Trends** | `get_trends`, `suggest_from_trends` |
+| **Data Sources** | `get_data_sources`, `suggest_widgets` |
+| **Gemini Agent** | `ask` — dogal dilde soru/istek; Gemini gerekirse diger tool'lari cagirip cevabi birlestirir |
 
 ---
 
-## Ask (Gemini orkestrasyonu)
+## Ask (Gemini Orkestrasyonu)
 
-**ask** tool’una doğal dilde bir cümle yazarsınız. Gemini, tanımlı araçlar (weather, list_widgets, get_today_holidays, get_data_sources, suggest_widgets, vb.) arasından seçim yapıp çağırır, sonuçları birleştirip metin cevap döner.
+`ask` tool'una dogal dilde bir cumle yazarsiniz. Gemini, tanimli araclar arasinden secim yapip cagirip sonuclari birlestirir.
 
-Örnekler:
+Ornekler:
+- *"Istanbul'da hava nasil?"* → `get_current_weather("Istanbul")` → ozet
+- *"Istanbul hava durumuna gore bana widget oner"* → hava bilgisi + `suggest_widgets`
+- *"Bugun ozel gun var mi?"* → `get_today_holidays`
+- *"Firebase'te kac widget var?"* → `list_widgets`
+- *"Yarin icin hava durumuna dayali widget olustur"* → hava + `create_widget`
 
-- *"Istanbul'da hava nasil?"* → Gemini `get_current_weather("Istanbul")` çağırır, cevabı özetler.
-- *"Istanbul hava durumuna gore bana bir widget oner"* → Önce hava bilgisi alır, sonra `suggest_widgets` ile context’e uygun widget önerir.
-- *"Bugun ozel gun var mi?"* → `get_today_holidays` çağırır.
-- *"Firebase’te kac widget var ve katalogda neler var?"* → `list_widgets` ve `get_widget_catalog` kullanır.
-
----
-
-## Kurulum (Cursor)
-
-1. **MCP config dosyası**
-   - Cursor → **Settings** → **MCP** → “Edit in settings.json” veya doğrudan `~/.cursor/mcp.json` (macOS/Linux) / `%USERPROFILE%\.cursor\mcp.json` (Windows) açın.
-   - Proje içinde kullanacaksanız: proje kökünde `.cursor/mcp.json` oluşturabilirsiniz.
-
-2. **Config içeriği**
-   - `mcp_config.example.json` dosyasını açıp içeriği kopyalayın.
-   - `cwd`: projenin **tam yolu** (örn. `/Users/adiniz/Documents/Projects/intyx-dynamic-widget`).
-   - `env` içinde:
-     - `FIREBASE_PROJECT_ID`: Firebase proje ID (örn. `intyx-dynamic`).
-     - `GEMINI_API_KEY`: Google AI Studio’dan aldığınız API key.
-     - İsteğe bağlı: `FIREBASE_CREDENTIALS_PATH` (service account JSON yolu), `OPENWEATHER_API_KEY` (hava araçları için).
-
-3. **Kaydedip Cursor’ı yenileyin**
-   - Config’i kaydedin; gerekirse Cursor’ı yeniden başlatın veya MCP sunucularını yeniden yükleyin. Sunucu `python -m server.mcp` ile otomatik başlar.
+Agent MAX_TURNS=10 ile agentic loop calistirir — bir soru icin birden fazla tool cagirabilir.
 
 ---
 
-## Kullanım (Cursor’da)
+## Kurulum
 
-1. **Composer veya Chat’i açın** (Cmd+I / Ctrl+I veya sohbet paneli).
-2. **MCP tool kullanmak için**
-   - Composer’da genelde **@** veya **Tools** ile MCP araçları listelenir.
-   - **intyx-dynamic-widget** sunucusundaki araçlardan birini seçin (örn. **ask**, get_current_weather, list_widgets).
-3. **Ask (doğal dil)**
-   - **ask** tool’unu seçin, **query** alanına doğal dilde yazın:
-     - *Istanbul'da hava nasil?*
-     - *Bugun ozel gun var mi?*
-     - *Bana hava durumuna gore bir widget oner*
-   - Gönder’e basın; Gemini gerekli araçları (weather, holidays, suggest_widgets vb.) kendisi çağırıp cevabı verir.
-4. **Tekil araçlar**
-   - Sadece hava istiyorsanız **get_current_weather** seçip `city: Istanbul` verin.
-   - Widget listesi için **list_widgets**, katalog için **get_widget_catalog** kullanın.
+### 1. Cursor
+
+1. Cursor → **Settings** → **MCP** → "Edit in settings.json"
+   - Veya dogrudan `~/.cursor/mcp.json` (macOS/Linux) / `%USERPROFILE%\.cursor\mcp.json` (Windows)
+   - Proje bazli: proje kokunde `.cursor/mcp.json`
+
+2. `mcp_config.example.json` icerigini kopyalayip duzeleyin:
+
+```json
+{
+  "mcpServers": {
+    "intyx-dynamic-widget": {
+      "command": "python",
+      "args": ["-m", "server.mcp"],
+      "cwd": "/PROJE/YOLUNUZ/intyx-dynamic-widget",
+      "env": {
+        "FIREBASE_PROJECT_ID": "intyx-dynamic",
+        "GEMINI_API_KEY": "your-gemini-api-key",
+        "FIREBASE_CREDENTIALS_PATH": "/path/to/serviceAccountKey.json",
+        "OPENWEATHER_API_KEY": "optional-for-weather"
+      }
+    }
+  }
+}
+```
+
+3. Kaydedin ve Cursor'i yeniden baslatin (veya MCP sunucularini yeniden yukleyin).
+
+### 2. Claude Desktop
+
+Claude Desktop MCP ayarlarinda ayni config'i kullanin. `command` ve `args` ayni.
+
+### 3. Diger MCP Client'lar
+
+Herhangi bir MCP client stdio transport destekliyorsa:
+```bash
+cd /path/to/intyx-dynamic-widget
+FIREBASE_PROJECT_ID=intyx-dynamic GEMINI_API_KEY=your-key python -m server.mcp
+```
 
 ---
 
-## Terminalden test (isteğe bağlı)
+## Kullanim
 
-Sunucunun ayağa kalktığını doğrulamak için proje kökünde:
+### Cursor'da
+
+1. **Composer veya Chat'i acin** (Cmd+I / Ctrl+I)
+2. MCP tool'larini secin — **intyx-dynamic-widget** sunucusundaki araclardan birini secin
+3. **Ask (dogal dil):** `ask` tool'unu secin, `query` alanina yazin
+4. **Tekil araclar:** `get_current_weather` → `city: Istanbul`
+
+### Terminalden Test
 
 ```bash
 cd /path/to/intyx-dynamic-widget
@@ -76,8 +125,28 @@ export GEMINI_API_KEY=your-key
 python -m server.mcp
 ```
 
-Stdio üzerinden MCP protokolü dinler; Cursor dışında bir MCP client bağlarsanız aynı komutla kullanılır.
+Stdio uzerinden MCP protokolu dinler. `Ctrl+C` ile durdurun.
 
 ---
 
-Ayrı weather veya holidays MCP sunucuları (`server.mcp.weather`, `server.mcp.holidays`) artık zorunlu değil; hepsi ana sunucuda birleşti.
+## Gereksinimler
+
+| Gereksinim | Aciklama |
+|-----------|----------|
+| Python 3.10+ | MCP server Python'la calisir |
+| `pip install -r server/requirements.txt` | mcp, google-generativeai, firebase-admin, vb. |
+| `FIREBASE_PROJECT_ID` | Zorunlu env |
+| `GEMINI_API_KEY` | Zorunlu env (ask tool icin) |
+| `FIREBASE_CREDENTIALS_PATH` | Opsiyonel (yerel icin) |
+| `OPENWEATHER_API_KEY` | Opsiyonel (weather tool'lari icin) |
+
+---
+
+## Sorun Giderme
+
+| Sorun | Cozum |
+|-------|-------|
+| "GEMINI_API_KEY is required" | `.env` veya MCP config'deki `env` bolumune key'i ekleyin |
+| Tool listesi gorunmuyor | Cursor'i yeniden baslatin, MCP sunucusunu reload edin |
+| "Firebase connection error" | `FIREBASE_PROJECT_ID` dogru mu? Service account JSON yolu dogru mu? |
+| Weather verisi gelmiyor | `OPENWEATHER_API_KEY` opsiyonel — eklenmezse placeholder veri doner |

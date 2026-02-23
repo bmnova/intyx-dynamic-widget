@@ -1,76 +1,116 @@
-# Firebase’de Aktive Edilecek Özellikler
+# Firebase Kurulum Rehberi
 
-**intyx-dynamic** projesi için Firebase Console’da açmanız gerekenler:
+**intyx-dynamic-widget** projesi icin Firebase Console'da yapilmasi gerekenler.
 
 ---
 
-## 1. Firestore Database — **Zorunlu**
+## 1. Firestore Database — Zorunlu
 
 Backend (Flask) ve Flutter client veriyi burada tutuyor.
 
-- [Firebase Console](https://console.firebase.google.com) → **intyx-dynamic** projesi
-- Sol menü: **Build** → **Firestore Database** → **Create database**
-- **Konum:** En yakın region seçin (örn. `europe-west1`)
-- **Mod:** Başlangıç için “Start in **test mode**” (geliştirme); production’da kuralları deploy edin (aşağıda)
+- [Firebase Console](https://console.firebase.google.com) → projenizi secin (veya yeni olusturun)
+- Sol menu: **Build** → **Firestore Database** → **Create database**
+- **Konum:** En yakin region (orn. `europe-west1`)
+- **Mod:** Baslangic icin "Start in test mode"; production'da kurallari deploy edin
 
-Oluşan koleksiyonlar (kod tarafından kullanılır, elle oluşturmanız gerekmez):
+### Koleksiyonlar
 
-| Koleksiyon      | Açıklama                          |
-|-----------------|-----------------------------------|
-| `widgets`       | Widget tanımları                  |
-| `trigger_rules` | Tetikleme kuralları               |
-| `user_states`   | Kullanıcı durumu (dismissed, vb.)  |
-| `data_cache`    | Önbellek (lisans, hava durumu vb.)|
+Kod tarafindan otomatik olusturulur, elle olusturmaniz gerekmez:
+
+| Koleksiyon | Aciklama | Kullanim |
+|-----------|----------|----------|
+| `widgets` | Widget tanimlari | Widget CRUD API |
+| `trigger_rules` | Tetikleme kurallari | Trigger evaluation |
+| `user_states` | Kullanici durumlari (dismissed, interactions, user_actions) | Widget dismiss/interact |
+| `data_cache` | Onbellek (hava durumu, haberler, burclar, trendler) | Data source polling |
+| `licenses` | Lisans kayitlari | Lisans olusturma/dogrulama |
+| `agent_tasks` | Agent task/persona kayitlari | Agent task CRUD |
 
 ---
 
-## 2. Kurallar ve indeksler
+## 2. Guvenlik Kurallari ve Index'ler
 
-Proje kökünde `firestore.rules` ve `firestore.indexes.json` var. Deploy için:
+Proje kokunde `firestore.rules` ve `firestore.indexes.json` dosyalari mevcut.
+
+### Deploy
 
 ```bash
-firebase use intyx-dynamic   # veya proje ID’niz
+npm install -g firebase-tools  # ilk kez
+firebase login
+firebase use YOUR_PROJECT_ID
+
+# Kurallari deploy et
 firebase deploy --only firestore:rules
+
+# Index'leri deploy et
 firebase deploy --only firestore:indexes
 ```
 
-(İlk kez kullanıyorsanız `firebase init` ile Firestore’u seçip bu dosyaları bağlayın.)
+### Kurallar Ozeti
+
+```
+widgets          → read: herkes, write: sadece server (Admin SDK)
+trigger_rules    → read: herkes, write: sadece server
+user_states      → read: sadece sahibi (auth.uid == userId), write: sadece server
+data_cache       → read: herkes, write: sadece server
+licenses         → read/write: sadece server
+agent_tasks      → read/write: sadece server
+```
+
+Backend Firebase Admin SDK ile calisir — Admin SDK tum kurallari bypass eder. Kurallar sadece client-side (Flutter/web) erisimleri icin gecerlidir.
 
 ---
 
-## 3. Authentication — **İsteğe bağlı**
+## 3. Authentication — Istege Bagli
 
-- **Ne zaman gerekir:** Flutter uygulamasında kullanıcı girişi (login) kullanıyorsanız ve Firestore kurallarındaki `user_states` okuma (`request.auth.uid == userId`) çalışsın istiyorsanız.
-- **Ne zaman gerekmez:** Sadece backend API (Flask) ve anonim/API key ile çalışıyorsanız; backend service account ile yazar/okur, Auth açmanız gerekmez.
+### Ne zaman gerekir?
+- Flutter uygulamasinda kullanici girisi (login) kullaniyorsaniz
+- Firestore kurallarindaki `user_states` okuma (`request.auth.uid == userId`) calissin istiyorsaniz
 
-Açacaksanız: **Build** → **Authentication** → **Get started** → İstediğiniz yöntemi etkinleştirin (Email/Password, Google, vb.).
+### Ne zaman gerekmez?
+- Sadece backend API (Flask) ve API key ile calisiyorsaniz
+- Backend service account ile yazar/okur, Auth acmaniz gerekmez
 
----
-
-## 4. Açmanız gerekmeyenler
-
-- **Realtime Database** — Kullanılmıyor (Firestore kullanılıyor).
-- **Storage** — Kodda kullanılmıyor.
-- **Cloud Functions** — Bu projede yok; isteğe bağlı.
-- **Hosting** — İsteğe bağlı; web frontend Vercel/Netlify’da olabilir.
+Acacaksaniz: **Build** → **Authentication** → **Get started** → Yontemi etkinlestirin (Email/Password, Google, vb.).
 
 ---
 
-## 5. Backend (server) için Service Account
+## 4. Service Account (Backend icin)
 
-Backend’in Firestore’a yazabilmesi için:
+Backend'in Firestore'a yazabilmesi icin:
 
-- **Project settings** (dişli) → **Service accounts** → **Generate new private key**
-- İndirilen JSON dosyasının yolunu `FIREBASE_CREDENTIALS_PATH` olarak kullanın (yerelde). Cloud Run’da boş bırakın; GCP Application Default Credentials kullanılır.
+### Yerel gelistirme
+1. Firebase Console → **Project settings** (disli) → **Service accounts** → **Generate new private key**
+2. Indirilen JSON dosyasinin yolunu `FIREBASE_CREDENTIALS_PATH` olarak `.env`'e yazin
+
+### Cloud Run / GCP
+- Bos birakin — Application Default Credentials (ADC) otomatik kullanilir
+- Cloud Run service account'a Firestore erisim izni verin (varsayilan olarak var)
+
+### Diger platformlar (Railway, Render, Fly.io)
+- Service account JSON icerigini platformun secret/file ozelligiyle monte edin
+- Veya JSON'i base64 encode edip env var olarak saklayip decode edin
 
 ---
 
-## Özet
+## 5. Acmaniz Gerekmeyenler
 
-| Özellik            | Durum        | Not                          |
-|--------------------|-------------|------------------------------|
-| **Firestore**      | Aktive et   | Veritabanı, zorunlu          |
-| **Auth**           | İsteğe bağlı| Sadece client login varsa    |
-| Realtime DB        | Gerek yok   | —                            |
-| Storage            | Gerek yok   | —                            |
-| Rules + Indexes    | Deploy et   | `firebase deploy --only firestore` |
+| Ozellik | Durum | Not |
+|---------|-------|-----|
+| **Realtime Database** | Gerek yok | Firestore kullaniliyor |
+| **Storage** | Gerek yok | Kodda kullanilmiyor |
+| **Cloud Functions** | Istege bagli | Bkz. [FIREBASE-FUNCTIONS-GEMINI.md](./FIREBASE-FUNCTIONS-GEMINI.md) |
+| **Hosting** | Istege bagli | Web frontend Vercel/Netlify'da olabilir |
+
+---
+
+## 6. Ozet
+
+| Adim | Yapilacak |
+|------|-----------|
+| 1 | Firestore Database olustur |
+| 2 | Service account JSON indir (yerel icin) |
+| 3 | `FIREBASE_PROJECT_ID` ve `FIREBASE_CREDENTIALS_PATH` env'lere yaz |
+| 4 | `firebase deploy --only firestore:rules` |
+| 5 | `firebase deploy --only firestore:indexes` |
+| 6 | Server'i calistir, koleksiyonlar otomatik olusur |
