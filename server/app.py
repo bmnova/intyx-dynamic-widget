@@ -10,6 +10,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 from server.config import (
+    DEV_MODE,
     HOST,
     PORT,
     RATE_LIMIT_DEFAULT,
@@ -85,14 +86,18 @@ def create_app() -> Flask:
                     return None
             return jsonify({"error": "Unauthorized — invalid or missing API key"}), 401
 
-        # No server key → dev mode, still accept license keys
+        # No server key — still accept valid license keys
         if token.startswith("intyx_"):
             from server import firebase_client as fb
             lic = fb.get_cached_data(f"license:{token}")
             if lic and lic.get("active"):
                 return None
 
-        return None
+        # Allow unauthenticated requests only in explicit dev mode
+        if DEV_MODE:
+            return None
+
+        return jsonify({"error": "Unauthorized — set INTYX_DEV_MODE=true for local development or provide a valid API key"}), 401
 
     # Register blueprints
     from server.routes.widgets import widgets_bp
