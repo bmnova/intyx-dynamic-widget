@@ -12,23 +12,25 @@ export default function Navbar() {
   const { pathname } = useLocation();
 
   return (
-    <nav style={styles.nav}>
+    <nav aria-label="Main navigation" style={styles.nav}>
       <div style={styles.inner}>
-        <Link to="/" style={styles.logo}>
-          <span style={styles.logoIcon}>◆</span> intyx
+        <Link to="/" aria-label="Intyx home" style={styles.logo}>
+          <span aria-hidden="true" style={styles.logoIcon}>◆</span> intyx
         </Link>
-        <div style={styles.links}>
+        <div role="list" style={styles.links}>
           {links.map((l) => (
-            <Link
-              key={l.to}
-              to={l.to}
-              style={{
-                ...styles.link,
-                color: pathname === l.to ? '#6366f1' : '#a1a1aa',
-              }}
-            >
-              {l.label}
-            </Link>
+            <div role="listitem" key={l.to}>
+              <Link
+                to={l.to}
+                aria-current={pathname === l.to ? 'page' : undefined}
+                style={{
+                  ...styles.link,
+                  color: pathname === l.to ? '#6366f1' : '#a1a1aa',
+                }}
+              >
+                {l.label}
+              </Link>
+            </div>
           ))}
         </div>
       </div>
