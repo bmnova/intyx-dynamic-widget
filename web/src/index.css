@@ -46,6 +46,13 @@ button {
   font-family: inherit;
 }
 
+/* Accessible focus indicator for keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
 code {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   background: var(--bg-card);
