@@ -125,58 +125,63 @@ export default function Pricing() {
   };
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
-      <section style={styles.hero}>
-        <h1 style={styles.h1}>Simple Pricing</h1>
+    <main id="main-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
+      <section aria-labelledby="pricing-heading" style={styles.hero}>
+        <h1 id="pricing-heading" style={styles.h1}>Simple Pricing</h1>
         <p style={styles.subtitle}>
           Choose a plan based on your project size. Upgrade or cancel anytime.
         </p>
       </section>
 
-      <div style={styles.grid}>
-        {PLANS.map((plan) => (
-          <div
-            key={plan.id}
-            style={{
-              ...styles.card,
-              ...(plan.popular ? styles.cardPopular : {}),
-            }}
-          >
-            {plan.popular && <div style={styles.popularBadge}>Popular</div>}
-            <h3 style={styles.planName}>{plan.name}</h3>
-            <p style={styles.planDesc}>{plan.description}</p>
-            <div style={styles.priceRow}>
-              <span style={styles.price}>
-                {plan.price === 0 ? 'Free' : `$${plan.price}`}
-              </span>
-              {plan.price > 0 && (
-                <span style={styles.period}>{plan.period}</span>
-              )}
-            </div>
-            <button
+      <section aria-label="Pricing plans">
+        <div style={styles.grid}>
+          {PLANS.map((plan) => (
+            <article
+              key={plan.id}
+              aria-label={`${plan.name} plan`}
               style={{
-                ...styles.btn,
-                ...(plan.popular ? styles.btnPopular : styles.btnDefault),
-                opacity: loading === plan.id ? 0.7 : 1,
+                ...styles.card,
+                ...(plan.popular ? styles.cardPopular : {}),
               }}
-              onClick={() => handlePurchase(plan.id)}
-              disabled={loading !== null}
             >
-              {loading === plan.id ? 'Processing...' : plan.cta}
-            </button>
-            <ul style={styles.features}>
-              {plan.features.map((f) => (
-                <li key={f} style={styles.feature}>
-                  <span style={styles.check}>✓</span> {f}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
+              {plan.popular && <div aria-label="Most popular plan" style={styles.popularBadge}>Popular</div>}
+              <h2 style={styles.planName}>{plan.name}</h2>
+              <p style={styles.planDesc}>{plan.description}</p>
+              <div style={styles.priceRow}>
+                <span style={styles.price}>
+                  {plan.price === 0 ? 'Free' : `$${plan.price}`}
+                </span>
+                {plan.price > 0 && (
+                  <span style={styles.period}>{plan.period}</span>
+                )}
+              </div>
+              <button
+                aria-label={`${plan.cta} — ${plan.name} plan`}
+                aria-busy={loading === plan.id}
+                style={{
+                  ...styles.btn,
+                  ...(plan.popular ? styles.btnPopular : styles.btnDefault),
+                  opacity: loading === plan.id ? 0.7 : 1,
+                }}
+                onClick={() => handlePurchase(plan.id)}
+                disabled={loading !== null}
+              >
+                {loading === plan.id ? 'Processing...' : plan.cta}
+              </button>
+              <ul aria-label={`${plan.name} features`} style={styles.features}>
+                {plan.features.map((f) => (
+                  <li key={f} style={styles.feature}>
+                    <span aria-hidden="true" style={styles.check}>✓</span> {f}
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <div style={styles.notice}>
-        <span style={{ fontSize: 18 }}>💳</span>
+        <span aria-hidden="true" style={{ fontSize: 18 }}>💳</span>
         <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>
           {hasPaddle
             ? <>We use <strong style={{ color: 'var(--text)' }}>Paddle</strong> for secure payments. Pro & Enterprise open the Paddle checkout.</>
@@ -193,7 +198,7 @@ export default function Pricing() {
           onClose={() => setToast(null)}
         />
       )}
-    </div>
+    </main>
   );
 }
 
