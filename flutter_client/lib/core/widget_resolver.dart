@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../models/widget_response.dart';
+import 'intyx_init.dart';
 import 'responsive_widget_wrapper.dart';
 import 'widget_registry.dart';
 
@@ -69,6 +70,13 @@ class WidgetResolver {
       }
 
       widgets.add(wrapped);
+    }
+
+    // Enforce the plan's widget limit. -1 means unlimited, 0 means SDK not
+    // yet initialized (no limit applied). Any positive value caps the list.
+    final limit = IntyxDynamicWidget.widgetLimit;
+    if (limit > 0 && widgets.length > limit) {
+      return widgets.sublist(0, limit);
     }
 
     return widgets;

@@ -5,6 +5,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../core/intyx_init.dart';
 import '../models/trigger_context.dart';
 import '../models/widget_response.dart';
 
@@ -15,12 +16,25 @@ class WidgetService {
   WidgetService({required this.baseUrl, http.Client? client})
       : _client = client ?? http.Client();
 
+  /// Returns headers for JSON POST requests, including Authorization when available.
+  Map<String, String> get _postHeaders => {
+        'Content-Type': 'application/json',
+        if (IntyxDynamicWidget.apiKey != null)
+          'Authorization': 'Bearer ${IntyxDynamicWidget.apiKey}',
+      };
+
+  /// Returns headers for GET requests, including Authorization when available.
+  Map<String, String> get _getHeaders => {
+        if (IntyxDynamicWidget.apiKey != null)
+          'Authorization': 'Bearer ${IntyxDynamicWidget.apiKey}',
+      };
+
   /// Fetch all widgets, optionally filtered by user.
   Future<List<WidgetEntry>> getWidgets({String? userId}) async {
     final uri = Uri.parse('$baseUrl/api/widgets').replace(
       queryParameters: userId != null ? {'user_id': userId} : null,
     );
-    final response = await _client.get(uri);
+    final response = await _client.get(uri, headers: _getHeaders);
     _checkResponse(response);
 
     final data = json.decode(response.body) as Map<String, dynamic>;
@@ -32,7 +46,7 @@ class WidgetService {
     final uri = Uri.parse('$baseUrl/api/widgets/evaluate');
     final response = await _client.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: _postHeaders,
       body: json.encode(context.toJson()),
     );
     _checkResponse(response);
@@ -46,7 +60,7 @@ class WidgetService {
     final uri = Uri.parse('$baseUrl/api/ai/suggest-widget');
     final response = await _client.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: _postHeaders,
       body: json.encode(context),
     );
     _checkResponse(response);
@@ -60,7 +74,7 @@ class WidgetService {
     final uri = Uri.parse('$baseUrl/api/widgets/$widgetId/dismiss');
     final response = await _client.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: _postHeaders,
       body: json.encode({'user_id': userId}),
     );
     _checkResponse(response);
@@ -75,7 +89,7 @@ class WidgetService {
     final uri = Uri.parse('$baseUrl/api/widgets/$widgetId/interact');
     final response = await _client.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: _postHeaders,
       body: json.encode({'user_id': userId, 'action': action}),
     );
     _checkResponse(response);
@@ -90,7 +104,7 @@ class WidgetService {
     final uri = Uri.parse('$baseUrl/api/widgets/user/action');
     final response = await _client.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: _postHeaders,
       body: json.encode({
         'user_id': userId,
         'action': action,
