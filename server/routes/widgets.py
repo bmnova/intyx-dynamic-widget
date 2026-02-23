@@ -58,6 +58,22 @@ def create_widget():
     if missing:
         return jsonify({"error": f"Missing fields: {missing}"}), 400
 
+    # Plan limit enforcement
+    license_key = data.get("license_key") or request.args.get("api_key", "")
+    if license_key:
+        lic = fb.get_license(license_key) if license_key.startswith("intyx_") else None
+        if lic:
+            widget_limit = lic.get("widget_limit", -1)
+            if widget_limit > 0:
+                current_count = fb.count_widgets_for_license(license_key)
+                if current_count >= widget_limit:
+                    return jsonify({
+                        "error": f"Widget limit reached ({widget_limit}). Upgrade your plan.",
+                        "current": current_count,
+                        "limit": widget_limit,
+                    }), 403
+            data["license_key"] = license_key
+
     # Validate widget type against catalog
     widget_type = data["type"]
     if widget_type not in VALID_WIDGET_TYPES:

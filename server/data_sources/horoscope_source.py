@@ -1,10 +1,20 @@
-"""Horoscope data source connector."""
+"""Horoscope data source connector — Gemini AI-powered predictions."""
 
 from __future__ import annotations
 
+import json
+import logging
+from datetime import date
 from typing import Any, Callable
 
 from server.models import HoroscopeData
+
+logger = logging.getLogger(__name__)
+
+SIGNS = [
+    "aries", "taurus", "gemini", "cancer", "leo", "virgo",
+    "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces",
+]
 
 
 class HoroscopeSource:
@@ -20,6 +30,14 @@ class HoroscopeSource:
         self._last_data[sign] = data
         self._notify(data)
         return data
+
+    async def fetch_all(self) -> list[HoroscopeData]:
+        """Fetch horoscopes for all signs using Gemini batch."""
+        results = self._batch_fetch()
+        for data in results:
+            self._last_data[data.sign] = data
+            self._notify(data)
+        return results
 
     def subscribe(self, callback: Callable[[HoroscopeData], None]) -> Callable[[], None]:
         self._subscribers.append(callback)
@@ -38,12 +56,68 @@ class HoroscopeSource:
 
     @staticmethod
     def _default_fetch(sign: str) -> HoroscopeData:
-        return HoroscopeData(
-            sign=sign,
-            prediction="Today is full of possibilities.",
-            date="",
-            mood="neutral",
-        )
+        """Fetch a single sign's horoscope using Gemini."""
+        try:
+            from server.ai.gemini_client import get_gemini_client
+            client = get_gemini_client()
+            today = date.today().isoformat()
+
+            response = client._model.generate_content(
+                f"Write a short daily horoscope for {sign} on {today}. "
+                f"Return ONLY valid JSON: "
+                f'{{"prediction": "...", "mood": "positive|neutral|negative", "lucky_number": N}}'
+            )
+            from server.ai.gemini_client import _strip_code_fences
+            text = _strip_code_fences(response.text)
+            parsed = json.loads(text)
+
+            return HoroscopeData(
+                sign=sign,
+                prediction=parsed.get("prediction", "Today is full of possibilities."),
+                date=today,
+                mood=parsed.get("mood", "neutral"),
+            )
+        except Exception:
+            logger.exception("Horoscope fetch failed for %s", sign)
+            return HoroscopeData(
+                sign=sign,
+                prediction="Today is full of possibilities.",
+                date=date.today().isoformat(),
+                mood="neutral",
+            )
+
+    @staticmethod
+    def _batch_fetch() -> list[HoroscopeData]:
+        """Fetch all 12 signs in a single Gemini call."""
+        try:
+            from server.ai.gemini_client import get_gemini_client, _strip_code_fences
+            client = get_gemini_client()
+            today = date.today().isoformat()
+
+            prompt = (
+                f"Write short daily horoscopes for all 12 zodiac signs for {today}. "
+                f"Return ONLY valid JSON array: "
+                f'[{{"sign": "aries", "prediction": "...", "mood": "positive|neutral|negative", "lucky_number": N}}, ...]'
+            )
+            response = client._model.generate_content(prompt)
+            text = _strip_code_fences(response.text)
+            parsed = json.loads(text)
+
+            results = []
+            for item in parsed:
+                results.append(HoroscopeData(
+                    sign=item.get("sign", ""),
+                    prediction=item.get("prediction", "Today is full of possibilities."),
+                    date=today,
+                    mood=item.get("mood", "neutral"),
+                ))
+            return results
+        except Exception:
+            logger.exception("Batch horoscope fetch failed")
+            return [
+                HoroscopeData(sign=s, prediction="Today is full of possibilities.", date=date.today().isoformat(), mood="neutral")
+                for s in SIGNS
+            ]
 
     @staticmethod
     def from_api_response(raw: dict[str, Any]) -> HoroscopeData:

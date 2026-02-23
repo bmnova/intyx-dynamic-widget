@@ -13,6 +13,7 @@ from server.config import (
     HOST,
     PORT,
     RATE_LIMIT_DEFAULT,
+    SENTRY_DSN,
     SERVER_API_KEY,
     validate_config,
 )
@@ -27,6 +28,17 @@ def create_app() -> Flask:
     """Create and configure the Flask application."""
     validate_config()
 
+    # Sentry error tracking (optional)
+    if SENTRY_DSN:
+        try:
+            import sentry_sdk
+            from sentry_sdk.integrations.flask import FlaskIntegration
+
+            sentry_sdk.init(dsn=SENTRY_DSN, integrations=[FlaskIntegration()], traces_sample_rate=0.1)
+            logging.getLogger(__name__).info("Sentry initialized")
+        except ImportError:
+            logging.getLogger(__name__).warning("sentry-sdk not installed — error tracking disabled")
+
     app = Flask(__name__)
     CORS(app)
 
@@ -38,30 +50,47 @@ def create_app() -> Flask:
         storage_uri="memory://",
     )
 
-    # API key validation middleware
+    # ── Auth middleware ───────────────────────────────────────────────
+    PUBLIC_PATHS = frozenset((
+        "/api/health",
+        "/api/licenses/validate",
+        "/api/licenses",
+        "/api/paddle/webhook",
+    ))
+
     @app.before_request
     def _check_api_key():
-        # Skip auth for health check and license validation/creation
-        skip_paths = ("/api/health", "/api/licenses/validate", "/api/licenses")
-        if request.path in skip_paths:
+        if request.path in PUBLIC_PATHS:
             return None
 
-        # Skip if SERVER_API_KEY is not configured (development mode)
-        if not SERVER_API_KEY:
-            return None
-
+        # Extract token
         auth = request.headers.get("Authorization", "")
         if auth.startswith("Bearer "):
             token = auth[7:]
         else:
-            # Fallback: check api_key in query params or body for backward compat
             token = request.args.get("api_key", "")
             if not token:
                 body = request.get_json(silent=True) or {}
                 token = body.get("api_key", "")
 
-        if not token or token != SERVER_API_KEY:
+        if SERVER_API_KEY:
+            # Server key matches → admin access
+            if token == SERVER_API_KEY:
+                return None
+            # Valid license key → customer access
+            if token.startswith("intyx_"):
+                from server import firebase_client as fb
+                lic = fb.get_cached_data(f"license:{token}")
+                if lic and lic.get("active"):
+                    return None
             return jsonify({"error": "Unauthorized — invalid or missing API key"}), 401
+
+        # No server key → dev mode, still accept license keys
+        if token.startswith("intyx_"):
+            from server import firebase_client as fb
+            lic = fb.get_cached_data(f"license:{token}")
+            if lic and lic.get("active"):
+                return None
 
         return None
 
@@ -71,12 +100,14 @@ def create_app() -> Flask:
     from server.routes.licenses import licenses_bp
     from server.routes.agent_tasks import agent_tasks_bp
     from server.routes.trends import trends_bp
+    from server.routes.paddle_webhook import paddle_bp
 
     app.register_blueprint(widgets_bp)
     app.register_blueprint(ai_bp)
     app.register_blueprint(licenses_bp)
     app.register_blueprint(agent_tasks_bp)
     app.register_blueprint(trends_bp)
+    app.register_blueprint(paddle_bp)
 
     # Apply stricter rate limit to AI endpoints
     from server.config import RATE_LIMIT_AI

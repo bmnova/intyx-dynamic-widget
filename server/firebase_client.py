@@ -251,3 +251,74 @@ def delete_cached_data(source: str) -> None:
     """Delete a cached data entry."""
     db = get_db()
     db.collection("data_cache").document(source).delete()
+
+
+# --- License Operations (Firestore-backed) ---
+
+
+def create_license(api_key: str, data: dict[str, Any]) -> None:
+    """Persist a license in both Firestore and data_cache for fast lookups."""
+    db = get_db()
+    data["created_at"] = time.time()
+    db.collection("licenses").document(api_key).set(data)
+    cache_data(f"license:{api_key}", data)
+
+
+def get_license(api_key: str) -> dict[str, Any] | None:
+    """Get a license — try cache first, then Firestore."""
+    cached = get_cached_data(f"license:{api_key}")
+    if cached:
+        return cached
+    db = get_db()
+    doc = db.collection("licenses").document(api_key).get()
+    if doc.exists:
+        data = doc.to_dict()
+        cache_data(f"license:{api_key}", data)
+        return data
+    return None
+
+
+def deactivate_license_by_paddle_customer(customer_id: str) -> bool:
+    """Deactivate all licenses for a Paddle customer ID."""
+    db = get_db()
+    docs = db.collection("licenses").where("paddle_customer_id", "==", customer_id).stream()
+    found = False
+    for doc in docs:
+        doc.reference.update({"active": False, "deactivated_at": time.time()})
+        api_key = doc.to_dict().get("api_key", doc.id)
+        cache_data(f"license:{api_key}", {**doc.to_dict(), "active": False})
+        found = True
+    return found
+
+
+def count_widgets_for_license(api_key: str) -> int:
+    """Count widgets created by a specific license key."""
+    db = get_db()
+    docs = db.collection("widgets").where("license_key", "==", api_key).stream()
+    return sum(1 for _ in docs)
+
+
+# --- Agent Task Operations (Firestore-backed) ---
+
+
+def get_agent_tasks(api_key: str) -> list[dict[str, Any]]:
+    """Get agent tasks — try cache first, then Firestore."""
+    cached = get_cached_data(f"agent_tasks:{api_key}")
+    if cached and isinstance(cached, dict):
+        return cached.get("tasks", [])
+    db = get_db()
+    doc = db.collection("agent_tasks").document(api_key).get()
+    if doc.exists:
+        data = doc.to_dict()
+        tasks = data.get("tasks", [])
+        cache_data(f"agent_tasks:{api_key}", {"tasks": tasks})
+        return tasks
+    return []
+
+
+def save_agent_tasks(api_key: str, tasks: list[dict[str, Any]]) -> None:
+    """Persist agent tasks to both Firestore and cache."""
+    db = get_db()
+    payload = {"tasks": tasks, "updated_at": time.time()}
+    db.collection("agent_tasks").document(api_key).set(payload)
+    cache_data(f"agent_tasks:{api_key}", payload)

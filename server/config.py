@@ -51,6 +51,16 @@ RATE_LIMIT_AI = os.environ.get("RATE_LIMIT_AI", "30 per minute")
 # API key for server endpoints (set to empty string to disable auth)
 SERVER_API_KEY = os.environ.get("INTYX_SERVER_API_KEY", "")
 
+# Paddle webhook verification
+PADDLE_WEBHOOK_SECRET = os.environ.get("PADDLE_WEBHOOK_SECRET", "")
+
+# Sentry error tracking (optional)
+SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
+
+# News API (newsapi.org)
+NEWS_API_KEY = os.environ.get("NEWS_API_KEY", "")
+NEWS_API_COUNTRY = os.environ.get("NEWS_API_COUNTRY", "tr")
+
 
 def validate_config() -> None:
     """Validate that required environment variables are set. Call at startup."""

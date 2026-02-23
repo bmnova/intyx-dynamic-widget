@@ -1,10 +1,18 @@
-"""News data source connector."""
+"""News data source connector — NewsAPI.org integration."""
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Callable
 
+import requests
+
+from server.config import NEWS_API_COUNTRY, NEWS_API_KEY
 from server.models import NewsData
+
+logger = logging.getLogger(__name__)
+
+NEWSAPI_BASE = "https://newsapi.org/v2"
 
 
 class NewsSource:
@@ -39,16 +47,33 @@ class NewsSource:
 
     @staticmethod
     def _default_fetch() -> list[NewsData]:
-        return []
+        """Fetch top headlines from NewsAPI.org."""
+        if not NEWS_API_KEY:
+            logger.debug("NEWS_API_KEY not set — returning empty news")
+            return []
+
+        try:
+            resp = requests.get(
+                f"{NEWSAPI_BASE}/top-headlines",
+                params={"country": NEWS_API_COUNTRY, "pageSize": 20, "apiKey": NEWS_API_KEY},
+                timeout=10,
+            )
+            resp.raise_for_status()
+            articles = resp.json().get("articles", [])
+            return NewsSource.from_api_response(articles)
+        except Exception:
+            logger.exception("NewsAPI fetch failed")
+            return []
 
     @staticmethod
     def from_api_response(raw: list[dict[str, Any]]) -> list[NewsData]:
         return [
             NewsData(
-                headline=item.get("headline", ""),
-                category=item.get("category", ""),
-                source=item.get("source", ""),
+                headline=item.get("title") or item.get("headline", ""),
+                category=item.get("category", "general"),
+                source=item.get("source", {}).get("name", "") if isinstance(item.get("source"), dict) else item.get("source", ""),
                 url=item.get("url", ""),
             )
             for item in raw
+            if item.get("title")
         ]

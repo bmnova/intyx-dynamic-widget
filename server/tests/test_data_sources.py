@@ -58,10 +58,11 @@ class TestNewsSource:
         assert isinstance(data, list)
 
     def test_from_api_response(self):
-        raw = [{"headline": "Test", "category": "tech", "source": "CNN", "url": "https://example.com"}]
+        raw = [{"title": "Test", "category": "tech", "source": {"name": "CNN"}, "url": "https://example.com"}]
         data = NewsSource.from_api_response(raw)
         assert len(data) == 1
         assert data[0].headline == "Test"
+        assert data[0].source == "CNN"
 
 
 class TestHoroscopeSource:

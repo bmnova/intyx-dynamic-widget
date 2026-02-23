@@ -16,7 +16,7 @@ def create_license():
     """Create a new license key after successful purchase.
 
     Expected body: { "plan": "starter|pro|enterprise", "email": "..." }
-    In production this would be called by the Paddle webhook.
+    In production this is called by the Paddle webhook, not directly.
     """
     data = request.get_json() or {}
     plan = data.get("plan")
@@ -35,7 +35,7 @@ def create_license():
         "widget_limit": {"starter": 3, "pro": 10, "enterprise": -1}[plan],
         "mau_limit": {"starter": 1000, "pro": 50000, "enterprise": -1}[plan],
     }
-    fb.cache_data(f"license:{api_key}", doc)
+    fb.create_license(api_key, doc)
 
     return jsonify({"api_key": api_key, "plan": plan}), 201
 
@@ -52,7 +52,7 @@ def validate_license():
     if not api_key.startswith("intyx_"):
         return jsonify({"valid": False, "error": "Invalid key format"}), 401
 
-    doc = fb.get_cached_data(f"license:{api_key}")
+    doc = fb.get_license(api_key)
     if not doc or not doc.get("active"):
         return jsonify({"valid": False, "error": "Key not found or inactive"}), 401
 
