@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import logging
 
+from flasgger import Swagger
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 from server.config import (
+    DEV_MODE,
     HOST,
     PORT,
     RATE_LIMIT_DEFAULT,
@@ -41,6 +43,49 @@ def create_app() -> Flask:
 
     app = Flask(__name__)
     CORS(app)
+
+    # ── OpenAPI / Swagger UI ─────────────────────────────────────────
+    Swagger(
+        app,
+        config={
+            "headers": [],
+            "specs": [
+                {
+                    "endpoint": "apispec",
+                    "route": "/api/docs/apispec.json",
+                    "rule_filter": lambda rule: True,
+                    "model_filter": lambda tag: True,
+                }
+            ],
+            "swagger_ui": True,
+            "specs_route": "/api/docs/",
+        },
+        template={
+            "swagger": "2.0",
+            "info": {
+                "title": "Intyx Dynamic Widget API",
+                "description": (
+                    "AI-driven dynamic widget system for Flutter apps.\n\n"
+                    "**Authentication**: All endpoints except `/api/health`, "
+                    "`/api/licenses/validate`, and `/api/licenses` require a "
+                    "Bearer API key in the `Authorization` header."
+                ),
+                "version": "1.0.0",
+                "contact": {"email": "support@intyx.dev"},
+            },
+            "securityDefinitions": {
+                "BearerAuth": {
+                    "type": "apiKey",
+                    "name": "Authorization",
+                    "in": "header",
+                    "description": "Format: `Bearer <api_key>`",
+                }
+            },
+            "security": [{"BearerAuth": []}],
+            "consumes": ["application/json"],
+            "produces": ["application/json"],
+        },
+    )
 
     # Rate limiting
     limiter = Limiter(
@@ -85,14 +130,18 @@ def create_app() -> Flask:
                     return None
             return jsonify({"error": "Unauthorized — invalid or missing API key"}), 401
 
-        # No server key → dev mode, still accept license keys
+        # No server key — still accept valid license keys
         if token.startswith("intyx_"):
             from server import firebase_client as fb
             lic = fb.get_cached_data(f"license:{token}")
             if lic and lic.get("active"):
                 return None
 
-        return None
+        # Allow unauthenticated requests only in explicit dev mode
+        if DEV_MODE:
+            return None
+
+        return jsonify({"error": "Unauthorized — set INTYX_DEV_MODE=true for local development or provide a valid API key"}), 401
 
     # Register blueprints
     from server.routes.widgets import widgets_bp

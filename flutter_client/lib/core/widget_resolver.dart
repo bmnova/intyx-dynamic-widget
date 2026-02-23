@@ -4,6 +4,9 @@ library;
 import 'package:flutter/material.dart';
 
 import '../models/widget_response.dart';
+import '../services/widget_service.dart';
+import '../widgets/impression_tracker.dart';
+import 'intyx_init.dart';
 import 'responsive_widget_wrapper.dart';
 import 'widget_registry.dart';
 
@@ -20,6 +23,8 @@ class WidgetResolver {
     ColorScheme? hostColorScheme,
     OnWidgetDismiss? onDismiss,
     OnWidgetAction? onAction,
+    String? userId,
+    WidgetService? analyticsService,
   }) {
     final response = WidgetResponse.fromJson(responseJson);
     return resolveEntries(
@@ -27,6 +32,8 @@ class WidgetResolver {
       hostColorScheme: hostColorScheme,
       onDismiss: onDismiss,
       onAction: onAction,
+      userId: userId,
+      analyticsService: analyticsService,
     );
   }
 
@@ -36,11 +43,17 @@ class WidgetResolver {
   ///   1. Per-widget `color_palette` from agent JSON
   ///   2. [hostColorScheme] passed by the developer
   ///   3. The ambient Theme from context
+  ///
+  /// When [userId] and [analyticsService] are both provided, impressions are
+  /// tracked automatically on first render and dismiss events are forwarded
+  /// to the analytics backend in addition to calling [onDismiss].
   static List<Widget> resolveEntries(
     List<WidgetEntry> entries, {
     ColorScheme? hostColorScheme,
     OnWidgetDismiss? onDismiss,
     OnWidgetAction? onAction,
+    String? userId,
+    WidgetService? analyticsService,
   }) {
     final widgets = <Widget>[];
 
@@ -61,14 +74,39 @@ class WidgetResolver {
       );
 
       if (entry.common.dismissible && onDismiss != null) {
+        final entryId = entry.id;
         wrapped = Dismissible(
-          key: ValueKey(entry.id),
-          onDismissed: (_) => onDismiss(entry.id),
+          key: ValueKey(entryId),
+          onDismissed: (_) {
+            if (userId != null && analyticsService != null) {
+              analyticsService
+                  .recordInteraction(entryId, userId, action: 'dismiss')
+                  .ignore();
+            }
+            onDismiss(entryId);
+          },
+          child: wrapped,
+        );
+      }
+
+      // Wrap with impression tracker when analytics is configured.
+      if (userId != null && analyticsService != null) {
+        wrapped = ImpressionTracker(
+          widgetId: entry.id,
+          userId: userId,
+          service: analyticsService,
           child: wrapped,
         );
       }
 
       widgets.add(wrapped);
+    }
+
+    // Enforce the plan's widget limit. -1 means unlimited, 0 means SDK not
+    // yet initialized (no limit applied). Any positive value caps the list.
+    final limit = IntyxDynamicWidget.widgetLimit;
+    if (limit > 0 && widgets.length > limit) {
+      return widgets.sublist(0, limit);
     }
 
     return widgets;

@@ -51,6 +51,10 @@ RATE_LIMIT_AI = os.environ.get("RATE_LIMIT_AI", "30 per minute")
 # API key for server endpoints (set to empty string to disable auth)
 SERVER_API_KEY = os.environ.get("INTYX_SERVER_API_KEY", "")
 
+# Dev mode: allows unauthenticated requests when SERVER_API_KEY is not set.
+# Set INTYX_DEV_MODE=true only in local development. Never in production.
+DEV_MODE = os.environ.get("INTYX_DEV_MODE", "false").lower() == "true"
+
 # Paddle webhook verification
 PADDLE_WEBHOOK_SECRET = os.environ.get("PADDLE_WEBHOOK_SECRET", "")
 
@@ -74,7 +78,14 @@ def validate_config() -> None:
         warnings.append("OPENWEATHER_API_KEY not set — weather data will use placeholders")
 
     if not SERVER_API_KEY:
-        warnings.append("INTYX_SERVER_API_KEY not set — API endpoints are unprotected (TODO: test sonrası ekleyin)")
+        if DEV_MODE:
+            warnings.append("INTYX_SERVER_API_KEY not set — running in DEV_MODE, unauthenticated requests are allowed")
+        else:
+            warnings.append(
+                "INTYX_SERVER_API_KEY not set and INTYX_DEV_MODE is not enabled — "
+                "requests without a valid license key will be rejected (401). "
+                "Set INTYX_SERVER_API_KEY for admin access or INTYX_DEV_MODE=true for local development."
+            )
 
     for w in warnings:
         logger.warning("CONFIG: %s", w)

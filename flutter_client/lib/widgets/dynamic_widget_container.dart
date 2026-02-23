@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/widget_resolver.dart';
 import '../models/widget_response.dart';
+import '../services/widget_service.dart';
 
 /// Main container that renders a list of widgets from agent JSON response.
 ///
@@ -33,6 +34,18 @@ class DynamicWidgetContainer extends StatelessWidget {
   /// Called when a widget action is triggered.
   final OnWidgetAction? onAction;
 
+  /// User ID for automatic analytics tracking.
+  ///
+  /// When provided together with [analyticsService], the SDK will
+  /// automatically record `impression`, `dismiss`, and `action` events
+  /// without any extra work from the developer.
+  final String? userId;
+
+  /// Service instance used for automatic analytics tracking.
+  ///
+  /// Must be provided together with [userId] to enable auto-tracking.
+  final WidgetService? analyticsService;
+
   /// Spacing between widgets.
   final double spacing;
 
@@ -49,6 +62,8 @@ class DynamicWidgetContainer extends StatelessWidget {
     this.colorScheme,
     this.onDismiss,
     this.onAction,
+    this.userId,
+    this.analyticsService,
     this.spacing = 8,
     this.padding = const EdgeInsets.all(16),
     this.scrollable = true,
@@ -59,6 +74,17 @@ class DynamicWidgetContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // When analytics is configured, wrap onAction to also record the event.
+    OnWidgetAction? effectiveAction = onAction;
+    if (userId != null && analyticsService != null && onAction != null) {
+      effectiveAction = (id, action) {
+        analyticsService!
+            .recordInteraction(id, userId!, action: action)
+            .ignore();
+        onAction!(id, action);
+      };
+    }
+
     final List<Widget> widgets;
 
     if (entries != null) {
@@ -66,14 +92,18 @@ class DynamicWidgetContainer extends StatelessWidget {
         entries!,
         hostColorScheme: colorScheme,
         onDismiss: onDismiss,
-        onAction: onAction,
+        onAction: effectiveAction,
+        userId: userId,
+        analyticsService: analyticsService,
       );
     } else {
       widgets = WidgetResolver.resolve(
         responseJson!,
         hostColorScheme: colorScheme,
         onDismiss: onDismiss,
-        onAction: onAction,
+        onAction: effectiveAction,
+        userId: userId,
+        analyticsService: analyticsService,
       );
     }
 

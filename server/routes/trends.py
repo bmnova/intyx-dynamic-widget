@@ -11,12 +11,66 @@ trends_bp = Blueprint("trends", __name__, url_prefix="/api/trends")
 
 @trends_bp.route("", methods=["GET"])
 def get_trends():
-    """Get current cached trends.
-
-    Query params:
-        category: Filter by category (dance, music, challenge, etc.)
-        platform: Filter by platform (tiktok, twitter, google, etc.)
-        limit: Max items to return (default 10)
+    """Get current cached viral trends.
+    ---
+    tags:
+      - Trends
+    summary: List trends
+    description: Returns the latest cached trends. Trends are refreshed
+      periodically by a background job. Results can be filtered by
+      category and/or platform.
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: category
+        in: query
+        type: string
+        required: false
+        description: Filter by trend category (dance, music, challenge, meme, news, …).
+        example: dance
+      - name: platform
+        in: query
+        type: string
+        required: false
+        description: Filter by platform (tiktok, twitter, instagram, youtube, google).
+        example: tiktok
+      - name: limit
+        in: query
+        type: integer
+        required: false
+        default: 10
+        description: Maximum number of trends to return.
+    responses:
+      200:
+        description: Trend list.
+        schema:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  platform:
+                    type: string
+                  category:
+                    type: string
+                  description:
+                    type: string
+                  hashtags:
+                    type: array
+                    items:
+                      type: string
+                  engagement:
+                    type: integer
+                  region:
+                    type: string
+            count:
+              type: integer
+            updated_at:
+              type: number
     """
     cached = fb.get_cached_data("trends")
     if not cached:
@@ -45,7 +99,28 @@ def get_trends():
 
 @trends_bp.route("/categories", methods=["GET"])
 def get_trend_categories():
-    """Get available trend categories and their counts."""
+    """Get available trend categories and their item counts.
+    ---
+    tags:
+      - Trends
+    summary: List trend categories
+    security:
+      - BearerAuth: []
+    responses:
+      200:
+        description: Category counts.
+        schema:
+          type: object
+          properties:
+            categories:
+              type: object
+              additionalProperties:
+                type: integer
+              example:
+                dance: 12
+                music: 8
+                challenge: 5
+    """
     cached = fb.get_cached_data("trends")
     if not cached:
         return jsonify({"categories": {}})
@@ -61,12 +136,52 @@ def get_trend_categories():
 
 @trends_bp.route("/suggest", methods=["POST"])
 def suggest_from_trends():
-    """Use AI to suggest widgets based on current trends + app context.
-
-    Body: {
-        "context": { "app_type": "video_generation", ... },
-        "trend_filter": { "category": "dance", "limit": 5 }  // optional
-    }
+    """Use AI to suggest widgets based on current trends and app context.
+    ---
+    tags:
+      - Trends
+    summary: AI trend-based widget suggestion
+    description: >
+      Fetches the latest cached trends, optionally filters them, injects
+      them into the AI context, and returns AI-recommended widgets tailored
+      to what's viral right now.
+    security:
+      - BearerAuth: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            context:
+              type: object
+              description: App/user context to personalise suggestions.
+              example:
+                app_type: video_generation
+                user_segment: creator
+            trend_filter:
+              type: object
+              description: Optional filter applied to the trend list before AI processing.
+              properties:
+                category:
+                  type: string
+                  example: dance
+                limit:
+                  type: integer
+                  default: 5
+    responses:
+      200:
+        description: AI-suggested widgets based on current trends.
+        schema:
+          type: object
+          properties:
+            widgets:
+              type: array
+              items:
+                type: object
+      429:
+        description: Rate limit exceeded.
     """
     data = request.get_json() or {}
     context = data.get("context", {})
