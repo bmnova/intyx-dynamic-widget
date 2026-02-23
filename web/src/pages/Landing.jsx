@@ -23,11 +23,11 @@ const FEATURES = [
 
 export default function Landing() {
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
+    <main id="main-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
       {/* Hero */}
-      <section style={styles.hero}>
-        <div style={styles.badge}>Flutter Dynamic Widget System</div>
-        <h1 style={styles.h1}>
+      <section aria-labelledby="hero-heading" style={styles.hero}>
+        <div aria-hidden="true" style={styles.badge}>Flutter Dynamic Widget System</div>
+        <h1 id="hero-heading" style={styles.h1}>
           AI-Driven Widgets,<br />
           <span style={{ color: '#6366f1' }}>In One Line</span>
         </h1>
@@ -45,8 +45,8 @@ export default function Landing() {
         </div>
 
         {/* Code preview */}
-        <div style={styles.codeBlock}>
-          <div style={styles.codeHeader}>
+        <figure aria-label="Code example: DynamicWidgetContainer usage in Flutter" style={styles.codeBlock}>
+          <div aria-hidden="true" style={styles.codeHeader}>
             <span style={styles.dot('#ef4444')} />
             <span style={styles.dot('#f59e0b')} />
             <span style={styles.dot('#22c55e')} />
@@ -58,16 +58,16 @@ export default function Landing() {
   padding: EdgeInsets.all(12),
   onAction: (id, action) => handleAction(action),
 )`}</pre>
-        </div>
+        </figure>
       </section>
 
       {/* Features */}
-      <section style={styles.section}>
-        <h2 style={styles.h2}>How It Works</h2>
+      <section aria-labelledby="features-heading" style={styles.section}>
+        <h2 id="features-heading" style={styles.h2}>How It Works</h2>
         <div style={styles.featGrid}>
           {FEATURES.map((f) => (
             <div key={f.title} style={styles.featCard}>
-              <span style={{ fontSize: 32 }}>{f.icon}</span>
+              <span aria-hidden="true" style={{ fontSize: 32 }}>{f.icon}</span>
               <h3 style={{ fontSize: 16, fontWeight: 600, marginTop: 12 }}>{f.title}</h3>
               <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 8, lineHeight: 1.5 }}>{f.desc}</p>
             </div>
@@ -76,8 +76,8 @@ export default function Landing() {
       </section>
 
       {/* Widget catalog */}
-      <section style={styles.section}>
-        <h2 style={styles.h2}>Widget Catalog</h2>
+      <section aria-labelledby="catalog-heading" style={styles.section}>
+        <h2 id="catalog-heading" style={styles.h2}>Widget Catalog</h2>
         <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginBottom: 40 }}>
           10+ ready-made widget types. The agent picks the right one and fills in the parameters.
         </p>
@@ -89,8 +89,8 @@ export default function Landing() {
       </section>
 
       {/* CTA */}
-      <section style={{ ...styles.section, textAlign: 'center', paddingBottom: 80 }}>
-        <h2 style={styles.h2}>Get Started</h2>
+      <section aria-labelledby="cta-heading" style={{ ...styles.section, textAlign: 'center', paddingBottom: 80 }}>
+        <h2 id="cta-heading" style={styles.h2}>Get Started</h2>
         <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
           Choose a plan, get your API key, add it to your Flutter project.
         </p>
@@ -100,12 +100,12 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer style={styles.footer}>
+      <footer role="contentinfo" style={styles.footer}>
         <span style={{ color: '#71717a', fontSize: 13 }}>
           © 2026 Intyx. All rights reserved.
         </span>
       </footer>
-    </div>
+    </main>
   );
 }
 
