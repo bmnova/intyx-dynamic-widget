@@ -8,12 +8,17 @@ import 'package:http/http.dart' as http;
 import '../core/intyx_init.dart';
 import '../models/trigger_context.dart';
 import '../models/widget_response.dart';
+import 'widget_cache.dart';
 
 class WidgetService {
   final String baseUrl;
   final http.Client _client;
 
-  WidgetService({required this.baseUrl, http.Client? client})
+  /// Optional offline cache. When provided, successful responses are stored
+  /// locally and returned if a subsequent network request fails.
+  final WidgetCache? cache;
+
+  WidgetService({required this.baseUrl, http.Client? client, this.cache})
       : _client = client ?? http.Client();
 
   /// Returns headers for JSON POST requests, including Authorization when available.
@@ -30,29 +35,51 @@ class WidgetService {
       };
 
   /// Fetch all widgets, optionally filtered by user.
+  ///
+  /// On network failure, returns the last cached response for this [userId]
+  /// when a [cache] has been configured. Throws if there is no cache fallback.
   Future<List<WidgetEntry>> getWidgets({String? userId}) async {
-    final uri = Uri.parse('$baseUrl/api/widgets').replace(
-      queryParameters: userId != null ? {'user_id': userId} : null,
-    );
-    final response = await _client.get(uri, headers: _getHeaders);
-    _checkResponse(response);
-
-    final data = json.decode(response.body) as Map<String, dynamic>;
-    return WidgetResponse.fromJson(data).widgets;
+    final cacheKey = 'getWidgets_${userId ?? 'all'}';
+    try {
+      final uri = Uri.parse('$baseUrl/api/widgets').replace(
+        queryParameters: userId != null ? {'user_id': userId} : null,
+      );
+      final response = await _client.get(uri, headers: _getHeaders);
+      _checkResponse(response);
+      await cache?.save(cacheKey, response.body);
+      return WidgetResponse.fromJson(
+              json.decode(response.body) as Map<String, dynamic>)
+          .widgets;
+    } catch (_) {
+      final cached = await cache?.load(cacheKey);
+      if (cached != null) return cached;
+      rethrow;
+    }
   }
 
   /// Evaluate triggers and get matching widgets.
+  ///
+  /// On network failure, returns the last cached trigger evaluation when a
+  /// [cache] has been configured. Throws if there is no cache fallback.
   Future<List<WidgetEntry>> evaluateTriggers(TriggerContext context) async {
-    final uri = Uri.parse('$baseUrl/api/widgets/evaluate');
-    final response = await _client.post(
-      uri,
-      headers: _postHeaders,
-      body: json.encode(context.toJson()),
-    );
-    _checkResponse(response);
-
-    final data = json.decode(response.body) as Map<String, dynamic>;
-    return WidgetResponse.fromJson(data).widgets;
+    const cacheKey = 'evaluateTriggers';
+    try {
+      final uri = Uri.parse('$baseUrl/api/widgets/evaluate');
+      final response = await _client.post(
+        uri,
+        headers: _postHeaders,
+        body: json.encode(context.toJson()),
+      );
+      _checkResponse(response);
+      await cache?.save(cacheKey, response.body);
+      return WidgetResponse.fromJson(
+              json.decode(response.body) as Map<String, dynamic>)
+          .widgets;
+    } catch (_) {
+      final cached = await cache?.load(cacheKey);
+      if (cached != null) return cached;
+      rethrow;
+    }
   }
 
   /// Ask AI to suggest widgets for a context.
