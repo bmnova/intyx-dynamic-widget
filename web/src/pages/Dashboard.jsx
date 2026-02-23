@@ -38,14 +38,14 @@ export default function Dashboard() {
 
   if (!apiKey) {
     return (
-      <div style={{ maxWidth: 600, margin: '0 auto', padding: '80px 24px', textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: 24 }}>🔒</div>
-        <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>No plan selected yet</h2>
+      <main id="main-content" style={{ maxWidth: 600, margin: '0 auto', padding: '80px 24px', textAlign: 'center' }}>
+        <div aria-hidden="true" style={{ fontSize: 48, marginBottom: 24 }}>🔒</div>
+        <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>No plan selected yet</h1>
         <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
           Choose a plan and get your API key to use the widget system.
         </p>
         <Link to="/pricing" style={styles.btnPrimary}>View Plans →</Link>
-      </div>
+      </main>
     );
   }
 
@@ -58,14 +58,14 @@ export default function Dashboard() {
   const planLabel = { starter: 'Starter', pro: 'Pro', enterprise: 'Enterprise' }[plan] || plan;
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: '60px 24px' }}>
+    <main id="main-content" style={{ maxWidth: 800, margin: '0 auto', padding: '60px 24px' }}>
       <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>Dashboard</h1>
       <p style={{ color: 'var(--text-muted)', marginBottom: 40 }}>
         Use your API key in your Flutter project to enable the widget system.
       </p>
 
       {/* Plan info */}
-      <div style={styles.card}>
+      <section aria-label="Active plan" style={styles.card}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>Active Plan</div>
@@ -78,25 +78,30 @@ export default function Dashboard() {
             Started: {new Date(purchasedAt).toLocaleDateString()}
           </div>
         )}
-      </div>
+      </section>
 
       {/* API Key */}
-      <div style={{ ...styles.card, marginTop: 16 }}>
+      <section aria-label="API key" style={{ ...styles.card, marginTop: 16 }}>
         <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>API Key</div>
         <div style={styles.keyRow}>
-          <code style={styles.keyCode}>{apiKey}</code>
-          <button onClick={copyKey} style={styles.copyBtn}>
+          <code aria-label="Your API key" style={styles.keyCode}>{apiKey}</code>
+          <button
+            onClick={copyKey}
+            aria-label={copied ? 'API key copied to clipboard' : 'Copy API key to clipboard'}
+            aria-live="polite"
+            style={styles.copyBtn}
+          >
             {copied ? '✓ Copied' : 'Copy'}
           </button>
         </div>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 12 }}>
           Do not share this key. Each key is tied to a single project.
         </p>
-      </div>
+      </section>
 
       {/* Integration guide */}
-      <div style={{ ...styles.card, marginTop: 16 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Flutter Integration</h3>
+      <section aria-labelledby="integration-heading" style={{ ...styles.card, marginTop: 16 }}>
+        <h2 id="integration-heading" style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Flutter Integration</h2>
 
         <div style={styles.step}>
           <span style={styles.stepNum}>1</span>
@@ -139,28 +144,28 @@ void main() {
 )`}</pre>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Quick actions */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginTop: 16 }}>
+      <nav aria-label="Quick actions" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginTop: 16 }}>
         <Link to="/widget-studio" style={{ ...styles.actionCard, textDecoration: 'none', color: 'inherit' }}>
-          <div style={{ fontSize: 28, marginBottom: 8 }}>🎨</div>
+          <div aria-hidden="true" style={{ fontSize: 28, marginBottom: 8 }}>🎨</div>
           <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Widget Studio</div>
           <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
             Select widget types, write prompts, preview AI-generated widgets
           </div>
         </Link>
         <Link to="/agent-tasks" style={{ ...styles.actionCard, textDecoration: 'none', color: 'inherit' }}>
-          <div style={{ fontSize: 28, marginBottom: 8 }}>🤖</div>
+          <div aria-hidden="true" style={{ fontSize: 28, marginBottom: 8 }}>🤖</div>
           <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Agent Tasks</div>
           <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
             Create reusable AI tasks for automatic widget generation
           </div>
         </Link>
-      </div>
+      </nav>
 
       {/* Quick stats placeholder */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 16 }}>
+      <section aria-label="Usage statistics" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 16 }}>
         <div style={styles.statCard}>
           <div style={styles.statValue}>0</div>
           <div style={styles.statLabel}>Widget Views</div>
@@ -173,10 +178,10 @@ void main() {
           <div style={styles.statValue}>0</div>
           <div style={styles.statLabel}>Active Users</div>
         </div>
-      </div>
+      </section>
 
       <div style={{ height: 80 }} />
-    </div>
+    </main>
   );
 }
 
