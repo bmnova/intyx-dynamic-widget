@@ -65,6 +65,10 @@ SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
 NEWS_API_KEY = os.environ.get("NEWS_API_KEY", "")
 NEWS_API_COUNTRY = os.environ.get("NEWS_API_COUNTRY", "tr")
 
+# Air Quality (WAQI — https://aqicn.org/api/)
+# Leave empty to use the free "demo" token (rate-limited but functional)
+WAQI_API_TOKEN = os.environ.get("WAQI_API_TOKEN", "")
+
 
 def validate_config() -> None:
     """Validate that required environment variables are set. Call at startup."""

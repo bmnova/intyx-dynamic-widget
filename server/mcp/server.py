@@ -20,7 +20,11 @@ from server.ai.gemini_client import WIDGET_CATALOG
 from server.mcp.agent import run_ask
 from server.mcp.handlers import (
     ai_handlers,
+    air_quality_handlers,
+    earthquake_handlers,
+    exchange_rate_handlers,
     holiday_handlers,
+    prayer_times_handlers,
     trend_handlers,
     weather_handlers,
     widget_handlers,
@@ -63,6 +67,19 @@ TOOL_HANDLERS: dict[str, HandlerFn] = {
     "get_upcoming_holidays": holiday_handlers.get_upcoming_holidays,
     "get_holidays_for_month": holiday_handlers.get_holidays_for_month,
     "suggest_widget_for_holiday": holiday_handlers.suggest_widget_for_holiday,
+    # Air Quality
+    "get_air_quality_by_city": air_quality_handlers.get_air_quality_by_city,
+    "get_air_quality_by_coords": air_quality_handlers.get_air_quality_by_coords,
+    # Earthquakes
+    "get_recent_earthquakes": earthquake_handlers.get_recent_earthquakes,
+    "get_earthquakes_by_area": earthquake_handlers.get_earthquakes_by_area,
+    # Exchange Rates
+    "get_exchange_rates": exchange_rate_handlers.get_exchange_rates,
+    "convert_currency": exchange_rate_handlers.convert_currency,
+    # Prayer Times
+    "get_prayer_times": prayer_times_handlers.get_prayer_times,
+    "get_prayer_times_by_coords": prayer_times_handlers.get_prayer_times_by_coords,
+    "get_prayer_methods": prayer_times_handlers.get_prayer_methods,
 }
 
 
