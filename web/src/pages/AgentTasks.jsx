@@ -173,7 +173,7 @@ export default function AgentTasks() {
           style={styles.textarea}
           rows={4}
         />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
           <button onClick={handleCreate} disabled={!newTask.trim() || saving} style={styles.btnPrimary}>
             {saving ? 'Saving...' : 'Save Task'}
           </button>

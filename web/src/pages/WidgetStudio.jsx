@@ -75,7 +75,12 @@ export default function WidgetStudio() {
       setResult(data);
       setTab('preview');
     } catch (err) {
-      setError(err.message);
+      const isNetworkErr = err instanceof TypeError;
+      setError(
+        isNetworkErr
+          ? 'Backend unreachable. Set VITE_API_URL in Vercel environment variables to point to your deployed API.'
+          : err.message
+      );
     } finally {
       setLoading(false);
     }
