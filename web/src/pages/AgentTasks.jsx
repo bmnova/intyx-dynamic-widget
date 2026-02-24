@@ -10,7 +10,7 @@ const EXAMPLE_TASKS = [
 ];
 
 export default function AgentTasks() {
-  const apiKey = localStorage.getItem('intyx_api_key');
+  const apiKey = localStorage.getItem('intyx_api_key') || 'demo';
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState('');
   const [taskName, setTaskName] = useState('');
