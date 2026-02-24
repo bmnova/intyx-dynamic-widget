@@ -22,7 +22,7 @@ class IntyxDynamicWidget {
   static int _widgetLimit = 0;
   static bool _initialized = false;
   static bool _strictMode = false;
-  static String _baseUrl = 'https://api.intyx.dev';
+  static String _baseUrl = 'https://intyx-dynamic-widget-production.up.railway.app';
 
   /// Whether the SDK has been initialized and the license is valid.
   static bool get isInitialized => _initialized;
