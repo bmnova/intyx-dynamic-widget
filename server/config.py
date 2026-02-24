@@ -33,7 +33,7 @@ OPENWEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5"
 
 # AI
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_MODEL_NAME = os.environ.get("GEMINI_MODEL_NAME", "gemini-2.0-flash-lite")
+GEMINI_MODEL_NAME = os.environ.get("GEMINI_MODEL_NAME", "gemini-2.5-flash")
 
 # Trends
 TRENDS_POLL_INTERVAL = int(os.environ.get("TRENDS_POLL_INTERVAL", "900"))  # 15 min
