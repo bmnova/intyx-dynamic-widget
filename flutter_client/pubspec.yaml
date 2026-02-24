@@ -1,14 +1,21 @@
 name: intyx_dynamic_widget
-description: "Dynamic widget system for Flutter apps. AI-driven, JSON-configured, responsive widgets with 15+ built-in UI components."
-version: 0.1.0
-homepage: https://github.com/bmnova/intyx-dynamic-widget
+description: >-
+  AI-driven, JSON-configured dynamic widget system for Flutter.
+  16 built-in widget types (Banner, Carousel, Countdown, Poll, Rating …),
+  responsive layout, dismissible support, and an action callback system.
+  Designed for server-driven UI via an AI agent backend.
+version: 0.1.1
+homepage: https://intyx.dev
 repository: https://github.com/bmnova/intyx-dynamic-widget
 issue_tracker: https://github.com/bmnova/intyx-dynamic-widget/issues
+funding:
+  - https://intyx.dev/pricing
 topics:
   - widget
   - dynamic-ui
   - json
   - ai
+  - server-driven-ui
 
 environment:
   sdk: ">=3.0.0 <4.0.0"

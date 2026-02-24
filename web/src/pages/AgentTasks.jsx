@@ -130,39 +130,43 @@ export default function AgentTasks() {
 
   if (!apiKey) {
     return (
-      <div style={{ maxWidth: 600, margin: '0 auto', padding: '80px 24px', textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: 24 }}>🤖</div>
-        <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>Get a plan first</h2>
+      <main id="main-content" style={{ maxWidth: 600, margin: '0 auto', padding: '80px 24px', textAlign: 'center' }}>
+        <div aria-hidden="true" style={{ fontSize: 48, marginBottom: 24 }}>🤖</div>
+        <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>Get a plan first</h1>
         <p style={{ color: 'var(--text-muted)' }}>You need to choose a plan to define agent tasks.</p>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: '60px 24px' }}>
+    <main id="main-content" style={{ maxWidth: 800, margin: '0 auto', padding: '60px 24px' }}>
       <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>Agent Tasks</h1>
       <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
         Describe your app; the AI agent will decide which widgets to show based on this task.
       </p>
 
       {error && (
-        <div style={styles.errorBanner}>
+        <div role="alert" aria-live="assertive" style={styles.errorBanner}>
           {error}
-          <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 700, marginLeft: 12 }}>✕</button>
+          <button onClick={() => setError(null)} aria-label="Dismiss error" style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 700, marginLeft: 12 }}>✕</button>
         </div>
       )}
 
       {/* Create new task */}
-      <div style={styles.card}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Define New Task</h3>
+      <section aria-labelledby="new-task-heading" style={styles.card}>
+        <h2 id="new-task-heading" style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Define New Task</h2>
+        <label htmlFor="task-name" className="visually-hidden">Task name</label>
         <input
+          id="task-name"
           type="text"
           placeholder="Task name (e.g. Weather Suggestions)"
           value={taskName}
           onChange={(e) => setTaskName(e.target.value)}
           style={styles.input}
         />
+        <label htmlFor="task-description" className="visually-hidden">Task description</label>
         <textarea
+          id="task-description"
           placeholder="Describe your app and what you want in detail...&#10;&#10;Example: My app is a fashion app; show a widget that suggests outfit combinations based on the weather"
           value={newTask}
           onChange={(e) => setNewTask(e.target.value)}
@@ -177,13 +181,13 @@ export default function AgentTasks() {
             This text is passed to the AI agent as context
           </span>
         </div>
-      </div>
+      </section>
 
       {/* Example tasks */}
-      <div style={{ ...styles.card, marginTop: 16 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--text-muted)' }}>
+      <section aria-labelledby="examples-heading" style={{ ...styles.card, marginTop: 16 }}>
+        <h2 id="examples-heading" style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--text-muted)' }}>
           Example Task Descriptions
-        </h3>
+        </h2>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {EXAMPLE_TASKS.map((ex, i) => (
             <button
@@ -195,7 +199,7 @@ export default function AgentTasks() {
             </button>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* Task list */}
       {loading ? (
@@ -224,13 +228,27 @@ export default function AgentTasks() {
                   <code style={{ fontSize: 12, marginTop: 8, display: 'inline-block' }}>{task.id}</code>
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginLeft: 16, flexShrink: 0 }}>
-                  <button onClick={() => handleTest(task)} disabled={testing !== null} style={styles.btnSmall}>
+                  <button
+                    onClick={() => handleTest(task)}
+                    disabled={testing !== null}
+                    aria-label={`Test task: ${task.name}`}
+                    aria-busy={testing === task.id}
+                    style={styles.btnSmall}
+                  >
                     {testing === task.id ? '...' : '▶ Test'}
                   </button>
-                  <button onClick={() => handleToggle(task.id)} style={styles.btnSmall}>
+                  <button
+                    onClick={() => handleToggle(task.id)}
+                    aria-label={task.active ? `Pause task: ${task.name}` : `Activate task: ${task.name}`}
+                    style={styles.btnSmall}
+                  >
                     {task.active ? '⏸' : '▶'}
                   </button>
-                  <button onClick={() => handleDelete(task.id)} style={{ ...styles.btnSmall, color: '#ef4444' }}>
+                  <button
+                    onClick={() => handleDelete(task.id)}
+                    aria-label={`Delete task: ${task.name}`}
+                    style={{ ...styles.btnSmall, color: '#ef4444' }}
+                  >
                     ✕
                   </button>
                 </div>
@@ -279,7 +297,7 @@ DynamicWidgetContainer(
       )}
 
       <div style={{ height: 80 }} />
-    </div>
+    </main>
   );
 }
 

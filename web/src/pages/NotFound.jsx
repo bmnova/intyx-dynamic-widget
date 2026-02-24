@@ -2,23 +2,34 @@ import { Link } from 'react-router-dom';
 
 export default function NotFound() {
   return (
-    <div style={{
-      maxWidth: 600,
-      margin: '0 auto',
-      padding: '120px 24px',
-      textAlign: 'center',
-    }}>
-      <div style={{ fontSize: 72, fontWeight: 800, color: 'var(--text-muted)', marginBottom: 8 }}>
+    <main
+      id="main-content"
+      aria-labelledby="not-found-heading"
+      style={{
+        maxWidth: 600,
+        margin: '0 auto',
+        padding: '120px 24px',
+        textAlign: 'center',
+      }}
+    >
+      <p
+        aria-hidden="true"
+        style={{ fontSize: 72, fontWeight: 800, color: 'var(--text-muted)', marginBottom: 8 }}
+      >
         404
-      </div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>
+      </p>
+      <h1
+        id="not-found-heading"
+        style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}
+      >
         Page Not Found
-      </h2>
+      </h1>
       <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
         The page you're looking for doesn't exist or has been moved.
       </p>
       <Link
         to="/"
+        aria-label="Go back to Intyx home page"
         style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -34,6 +45,6 @@ export default function NotFound() {
       >
         Back to Home
       </Link>
-    </div>
+    </main>
   );
 }

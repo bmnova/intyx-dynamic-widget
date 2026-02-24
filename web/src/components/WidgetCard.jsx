@@ -1,13 +1,13 @@
 export default function WidgetCard({ icon, title, description, tag }) {
   return (
-    <div style={styles.card}>
-      <div style={styles.iconWrap}>
+    <article aria-label={title} style={styles.card}>
+      <div aria-hidden="true" style={styles.iconWrap}>
         <span style={styles.icon}>{icon}</span>
       </div>
       <h3 style={styles.title}>{title}</h3>
       <p style={styles.desc}>{description}</p>
       {tag && <span style={styles.tag}>{tag}</span>}
-    </div>
+    </article>
   );
 }
 

@@ -82,14 +82,14 @@ export default function WidgetStudio() {
   };
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '60px 24px' }}>
+    <main id="main-content" style={{ maxWidth: 1000, margin: '0 auto', padding: '60px 24px' }}>
       <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>Widget Studio</h1>
       <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
         Select widget types, describe your app, and let AI generate the perfect widgets for you.
       </p>
 
       {/* Tabs */}
-      <div style={styles.tabs}>
+      <div role="tablist" aria-label="Widget studio steps" style={styles.tabs}>
         {[
           { key: 'catalog', label: '1. Select Widgets', count: selected.length },
           { key: 'prompt', label: '2. Write Prompt' },
@@ -97,7 +97,12 @@ export default function WidgetStudio() {
         ].map((t) => (
           <button
             key={t.key}
+            role="tab"
+            aria-selected={tab === t.key}
+            aria-controls={`tabpanel-${t.key}`}
+            id={`tab-${t.key}`}
             onClick={() => !t.disabled && setTab(t.key)}
+            aria-disabled={t.disabled ? true : undefined}
             style={{
               ...styles.tab,
               borderColor: tab === t.key ? '#6366f1' : 'transparent',
@@ -106,21 +111,21 @@ export default function WidgetStudio() {
             }}
           >
             {t.label}
-            {t.count > 0 && <span style={styles.tabBadge}>{t.count}</span>}
+            {t.count > 0 && <span aria-label={`${t.count} selected`} style={styles.tabBadge}>{t.count}</span>}
           </button>
         ))}
       </div>
 
       {error && (
-        <div style={styles.errorBanner}>
+        <div role="alert" aria-live="assertive" style={styles.errorBanner}>
           {error}
-          <button onClick={() => setError(null)} style={styles.errorClose}>x</button>
+          <button onClick={() => setError(null)} aria-label="Dismiss error" style={styles.errorClose}>x</button>
         </div>
       )}
 
       {/* Tab: Widget Catalog */}
       {tab === 'catalog' && (
-        <>
+        <div id="tabpanel-catalog" role="tabpanel" aria-labelledby="tab-catalog">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>
               {selected.length === 0
@@ -160,19 +165,22 @@ export default function WidgetStudio() {
               Next: Write Prompt →
             </button>
           </div>
-        </>
+        </div>
       )}
 
       {/* Tab: Prompt */}
       {tab === 'prompt' && (
-        <>
+        <div id="tabpanel-prompt" role="tabpanel" aria-labelledby="tab-prompt">
           <div style={styles.card}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Describe Your App</h3>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Describe Your App</h2>
+            <p id="prompt-hint" style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>
               Tell the AI agent what your app does and what kind of widgets you want.
               The more detail you give, the better the results.
             </p>
+            <label htmlFor="studio-prompt" className="visually-hidden">Describe your app and desired widgets</label>
             <textarea
+              id="studio-prompt"
+              aria-describedby="prompt-hint"
               placeholder={'Example: My app is a fashion e-commerce app. I want to show:\n- Weather-based outfit suggestions\n- Seasonal campaign banners\n- Trending style recommendations\n- User rating prompts after purchase'}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -235,12 +243,12 @@ export default function WidgetStudio() {
               </button>
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {/* Tab: Preview */}
       {tab === 'preview' && result && (
-        <>
+        <div id="tabpanel-preview" role="tabpanel" aria-labelledby="tab-preview">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h3 style={{ fontSize: 18, fontWeight: 700 }}>
               Generated Widgets ({result.widgets?.length || 0})
@@ -321,11 +329,11 @@ export default function WidgetStudio() {
               {JSON.stringify(result, null, 2)}
             </pre>
           </details>
-        </>
+        </div>
       )}
 
       <div style={{ height: 80 }} />
-    </div>
+    </main>
   );
 }
 
