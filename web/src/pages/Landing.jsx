@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import WidgetCard from '../components/WidgetCard';
 
@@ -21,7 +22,149 @@ const FEATURES = [
   { icon: '🔥', title: 'Firebase + MCP', desc: 'Firestore backend, AI integration via MCP server. Realtime widget management.' },
 ];
 
+const DEMO_WIDGETS = [
+  {
+    key: 'banner',
+    label: 'Banner',
+    icon: '📢',
+    preview: {
+      type: 'banner',
+      emoji: '☀️',
+      text: 'Good morning! Today is a great day to ship something.',
+    },
+  },
+  {
+    key: 'promotional',
+    label: 'Promotional',
+    icon: '🏷️',
+    preview: {
+      type: 'promotional',
+      badge: 'SUMMER SALE',
+      title: '50% off all styles',
+      description: 'Limited time offer — ends Sunday midnight.',
+    },
+  },
+  {
+    key: 'countdown',
+    label: 'Countdown',
+    icon: '⏱️',
+    preview: {
+      type: 'countdown',
+      title: 'Flash Sale ends in',
+    },
+  },
+  {
+    key: 'rating',
+    label: 'Rating',
+    icon: '⭐',
+    preview: {
+      type: 'rating',
+      title: 'Enjoying the app?',
+      subtitle: 'Tap to rate your experience',
+      stars: 5,
+    },
+  },
+  {
+    key: 'progress',
+    label: 'Progress',
+    icon: '📈',
+    preview: {
+      type: 'progress',
+      title: 'Your fitness goal this week',
+      pct: 72,
+      label: '72% — 3 more workouts to go!',
+    },
+  },
+  {
+    key: 'poll',
+    label: 'Poll',
+    icon: '📊',
+    preview: {
+      type: 'poll',
+      question: 'Which feature should we build next?',
+      options: ['Dark mode', 'Offline support', 'AI suggestions'],
+    },
+  },
+];
+
+function DemoPreview({ widget }) {
+  const s = {
+    box: {
+      background: '#0c0c0e',
+      border: '1px solid var(--border)',
+      borderRadius: 12,
+      padding: 20,
+      color: 'var(--text)',
+      minHeight: 120,
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+    },
+  };
+
+  if (widget.type === 'banner') {
+    return (
+      <div style={{ ...s.box, textAlign: 'center', fontSize: 15 }}>
+        <span aria-hidden="true" style={{ fontSize: 24, display: 'block', marginBottom: 8 }}>{widget.emoji}</span>
+        {widget.text}
+      </div>
+    );
+  }
+  if (widget.type === 'promotional') {
+    return (
+      <div style={s.box}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', background: 'rgba(245,158,11,0.15)', padding: '3px 10px', borderRadius: 12, display: 'inline-block', marginBottom: 8 }}>
+          {widget.badge}
+        </span>
+        <div style={{ fontSize: 18, fontWeight: 700 }}>{widget.title}</div>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 6 }}>{widget.description}</div>
+      </div>
+    );
+  }
+  if (widget.type === 'countdown') {
+    return (
+      <div style={{ ...s.box, textAlign: 'center' }}>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>{widget.title}</div>
+        <div style={{ fontSize: 32, fontWeight: 800, color: '#6366f1', letterSpacing: 2 }}>02:47:13</div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>hours · minutes · seconds</div>
+      </div>
+    );
+  }
+  if (widget.type === 'rating') {
+    return (
+      <div style={{ ...s.box, textAlign: 'center' }}>
+        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>{widget.title}</div>
+        <div style={{ fontSize: 30, letterSpacing: 4, color: '#f59e0b' }}>{'★'.repeat(widget.stars)}</div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>{widget.subtitle}</div>
+      </div>
+    );
+  }
+  if (widget.type === 'progress') {
+    return (
+      <div style={s.box}>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>{widget.title}</div>
+        <div style={{ height: 10, borderRadius: 5, background: '#27272a', overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${widget.pct}%`, background: 'linear-gradient(90deg,#6366f1,#818cf8)', borderRadius: 5 }} />
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>{widget.label}</div>
+      </div>
+    );
+  }
+  if (widget.type === 'poll') {
+    return (
+      <div style={s.box}>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10 }}>{widget.question}</div>
+        {widget.options.map((o) => (
+          <div key={o} style={{ padding: '8px 12px', marginBottom: 6, border: '1px solid var(--border)', borderRadius: 6, fontSize: 13 }}>{o}</div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+}
+
 export default function Landing() {
+  const [activeDemo, setActiveDemo] = useState('banner');
   return (
     <main id="main-content" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
       {/* Hero */}
@@ -85,6 +228,54 @@ export default function Landing() {
           {WIDGETS.map((w) => (
             <WidgetCard key={w.title} {...w} />
           ))}
+        </div>
+      </section>
+
+      {/* Interactive demo */}
+      <section aria-labelledby="demo-heading" style={styles.section}>
+        <h2 id="demo-heading" style={styles.h2}>Live Widget Preview</h2>
+        <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginBottom: 32 }}>
+          Click a widget type to see how it looks inside your Flutter app.
+        </p>
+        <div style={styles.demoWrap}>
+          {/* Selector */}
+          <div role="tablist" aria-label="Widget type selector" style={styles.demoSelector}>
+            {DEMO_WIDGETS.map((w) => (
+              <button
+                key={w.key}
+                role="tab"
+                aria-selected={activeDemo === w.key}
+                aria-controls="demo-preview-panel"
+                id={`demo-tab-${w.key}`}
+                onClick={() => setActiveDemo(w.key)}
+                style={{
+                  ...styles.demoTab,
+                  background: activeDemo === w.key ? 'var(--primary-muted)' : 'transparent',
+                  borderColor: activeDemo === w.key ? 'var(--primary)' : 'transparent',
+                  color: activeDemo === w.key ? '#818cf8' : 'var(--text-muted)',
+                }}
+              >
+                <span aria-hidden="true" style={{ fontSize: 18 }}>{w.icon}</span>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>{w.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Preview panel */}
+          <div
+            id="demo-preview-panel"
+            role="tabpanel"
+            aria-labelledby={`demo-tab-${activeDemo}`}
+            style={styles.demoPreview}
+          >
+            <div style={{ fontSize: 11, color: '#52525b', marginBottom: 12, fontFamily: 'monospace' }}>
+              widget_type: &quot;{DEMO_WIDGETS.find((w) => w.key === activeDemo)?.key}&quot;
+            </div>
+            <DemoPreview widget={DEMO_WIDGETS.find((w) => w.key === activeDemo)?.preview} />
+            <p style={{ fontSize: 12, color: '#52525b', marginTop: 16, textAlign: 'center' }}>
+              AI fills these parameters automatically based on user context
+            </p>
+          </div>
         </div>
       </section>
 
@@ -230,5 +421,34 @@ const styles = {
     borderTop: '1px solid var(--border)',
     padding: '24px 0',
     textAlign: 'center',
+  },
+  demoWrap: {
+    display: 'grid',
+    gridTemplateColumns: '200px 1fr',
+    gap: 24,
+    alignItems: 'start',
+  },
+  demoSelector: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 4,
+  },
+  demoTab: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    padding: '10px 14px',
+    borderRadius: 8,
+    border: '1px solid transparent',
+    cursor: 'pointer',
+    textAlign: 'left',
+    transition: 'background 0.15s, border-color 0.15s',
+    background: 'transparent',
+  },
+  demoPreview: {
+    background: 'var(--bg-card)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius)',
+    padding: 24,
   },
 };
