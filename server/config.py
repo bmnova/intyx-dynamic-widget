@@ -71,7 +71,7 @@ def validate_config() -> None:
     logger = logging.getLogger(__name__)
     warnings = []
 
-    if not FIREBASE_CREDENTIALS_PATH:
+    if not FIREBASE_CREDENTIALS_PATH and not os.environ.get("FIREBASE_CREDENTIALS_JSON"):
         warnings.append("FIREBASE_CREDENTIALS_PATH not set — using Application Default Credentials")
 
     if not OPENWEATHER_API_KEY:
