@@ -6,6 +6,7 @@ import Pricing from './pages/Pricing';
 import Dashboard from './pages/Dashboard';
 import AgentTasks from './pages/AgentTasks';
 import WidgetStudio from './pages/WidgetStudio';
+import Admin from './pages/Admin';
 import NotFound from './pages/NotFound';
 
 export default function App() {
@@ -39,6 +40,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

@@ -298,6 +298,26 @@ def count_widgets_for_license(api_key: str) -> int:
     return sum(1 for _ in docs)
 
 
+def list_licenses(limit: int = 100) -> list[dict]:
+    """Return the most recent licenses ordered by creation time (admin use only)."""
+    db = get_db()
+    docs = (
+        db.collection("licenses")
+        .order_by("created_at", direction="DESCENDING")
+        .limit(limit)
+        .stream()
+    )
+    result = []
+    for doc in docs:
+        data = doc.to_dict()
+        # Never expose the raw api_key in the listing — mask it
+        raw_key = data.get("api_key", doc.id)
+        data["api_key_masked"] = raw_key[:12] + "…" if len(raw_key) > 12 else raw_key
+        data.pop("api_key", None)
+        result.append(data)
+    return result
+
+
 # --- Agent Task Operations (Firestore-backed) ---
 
 

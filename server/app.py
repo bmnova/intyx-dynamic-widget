@@ -150,6 +150,7 @@ def create_app() -> Flask:
     from server.routes.agent_tasks import agent_tasks_bp
     from server.routes.trends import trends_bp
     from server.routes.paddle_webhook import paddle_bp
+    from server.routes.admin import admin_bp
 
     app.register_blueprint(widgets_bp)
     app.register_blueprint(ai_bp)
@@ -157,6 +158,7 @@ def create_app() -> Flask:
     app.register_blueprint(agent_tasks_bp)
     app.register_blueprint(trends_bp)
     app.register_blueprint(paddle_bp)
+    app.register_blueprint(admin_bp)
 
     # Apply stricter rate limit to AI endpoints
     from server.config import RATE_LIMIT_AI

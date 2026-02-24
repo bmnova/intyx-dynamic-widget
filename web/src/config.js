@@ -17,3 +17,7 @@ export const PADDLE_CONFIG = {
   publishableToken: import.meta.env.VITE_PADDLE_PUBLISHABLE_TOKEN || '',
   priceIds: parsePriceIds(import.meta.env.VITE_PADDLE_PRICE_IDS),
 };
+
+// Admin dashboard secret — must match INTYX_SERVER_API_KEY on the backend.
+// Leave empty to disable the /admin page.
+export const ADMIN_SECRET = import.meta.env.VITE_ADMIN_SECRET || '';
