@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../core/intyx_init.dart';
 import '../core/widget_resolver.dart';
 import '../models/widget_response.dart';
 import '../services/widget_service.dart';
@@ -74,6 +76,29 @@ class DynamicWidgetContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ── License guard ────────────────────────────────────────────────
+    // Verify that IntyxDynamicWidget.init() was called and returned a
+    // valid (or offline-fallback) license before rendering any widgets.
+    if (!IntyxDynamicWidget.isInitialized) {
+      if (kDebugMode) {
+        // Show a prominent error in debug builds to alert the developer.
+        return ColoredBox(
+          color: Colors.red.shade900.withAlpha(220),
+          child: const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text(
+              '[Intyx] DynamicWidgetContainer rendered before '
+              'IntyxDynamicWidget.init() completed.\n'
+              'Call init() in main() and await it before runApp().',
+              style: TextStyle(color: Colors.white, fontSize: 13),
+            ),
+          ),
+        );
+      }
+      // In release builds: render nothing so the host app is unaffected.
+      return const SizedBox.shrink();
+    }
+
     // When analytics is configured, wrap onAction to also record the event.
     OnWidgetAction? effectiveAction = onAction;
     if (userId != null && analyticsService != null && onAction != null) {
