@@ -1,6 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
 
-const links = [
+interface NavLink {
+  to: string;
+  label: string;
+}
+
+const links: NavLink[] = [
   { to: '/', label: 'Home' },
   { to: '/pricing', label: 'Pricing' },
   { to: '/dashboard', label: 'Dashboard' },
@@ -38,7 +43,7 @@ export default function Navbar() {
   );
 }
 
-const styles = {
+const styles: Record<string, React.CSSProperties> = {
   nav: {
     position: 'sticky',
     top: 0,

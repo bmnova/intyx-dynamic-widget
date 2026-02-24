@@ -1,17 +1,26 @@
 import { useEffect } from 'react';
 
-export default function Toast({ type = 'error', message, onClose, duration = 4000 }) {
+type ToastType = 'error' | 'success' | 'info';
+
+interface ToastProps {
+  type?: ToastType;
+  message: string;
+  onClose: () => void;
+  duration?: number;
+}
+
+export default function Toast({ type = 'error', message, onClose, duration = 4000 }: ToastProps) {
   useEffect(() => {
     const timer = setTimeout(onClose, duration);
     return () => clearTimeout(timer);
   }, [onClose, duration]);
 
-  const colors = {
+  const colors: Record<ToastType, { bg: string; border: string; text: string }> = {
     error: { bg: 'rgba(239,68,68,0.15)', border: '#ef4444', text: '#fca5a5' },
     success: { bg: 'rgba(34,197,94,0.15)', border: '#22c55e', text: '#86efac' },
     info: { bg: 'rgba(99,102,241,0.15)', border: '#6366f1', text: '#a5b4fc' },
   };
-  const c = colors[type] || colors.error;
+  const c = colors[type] ?? colors.error;
 
   return (
     <div

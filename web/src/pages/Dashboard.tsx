@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
+import type { LicenseInfo, Plan } from '../types';
 
 export default function Dashboard() {
   const apiKey = localStorage.getItem('intyx_api_key') || 'demo';
   const purchasedAt = localStorage.getItem('intyx_purchased_at');
   const [copied, setCopied] = useState(false);
-  const [licenseInfo, setLicenseInfo] = useState(null);
+  const [licenseInfo, setLicenseInfo] = useState<LicenseInfo | null>(null);
   const [validating, setValidating] = useState(!!apiKey);
 
   useEffect(() => {
@@ -19,7 +20,7 @@ export default function Dashboard() {
           body: JSON.stringify({ api_key: apiKey }),
         });
         if (res.ok) {
-          const data = await res.json();
+          const data: LicenseInfo = await res.json();
           if (data.valid) {
             setLicenseInfo(data);
             localStorage.setItem('intyx_plan', data.plan);
@@ -32,9 +33,10 @@ export default function Dashboard() {
       }
     };
     validate();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const plan = licenseInfo?.plan || localStorage.getItem('intyx_plan');
+  const plan: Plan | string | null = licenseInfo?.plan ?? localStorage.getItem('intyx_plan');
 
   if (!apiKey) {
     return (
@@ -55,7 +57,10 @@ export default function Dashboard() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const planLabel = { starter: 'Starter', pro: 'Pro', enterprise: 'Enterprise' }[plan] || plan;
+  const planLabel: Record<string, string> = { starter: 'Starter', pro: 'Pro', enterprise: 'Enterprise' };
+
+  // suppress unused var warning for validating
+  void validating;
 
   return (
     <main id="main-content" style={{ maxWidth: 800, margin: '0 auto', padding: '60px 24px' }}>
@@ -69,7 +74,7 @@ export default function Dashboard() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>Active Plan</div>
-            <div style={{ fontSize: 20, fontWeight: 700 }}>{planLabel}</div>
+            <div style={{ fontSize: 20, fontWeight: 700 }}>{plan ? (planLabel[plan] ?? plan) : '—'}</div>
           </div>
           <span style={styles.activeBadge}>Active</span>
         </div>
@@ -185,7 +190,7 @@ void main() {
   );
 }
 
-const styles = {
+const styles: Record<string, React.CSSProperties> = {
   btnPrimary: {
     display: 'inline-flex',
     alignItems: 'center',

@@ -1,24 +1,30 @@
 import { useState, useEffect, useCallback } from 'react';
 import { API_BASE_URL, ADMIN_SECRET } from '../config';
+import type { AdminStats, AdminLicense, Plan } from '../types';
 
-const PLAN_COLORS = {
+const PLAN_COLORS: Record<Plan, string> = {
   starter: '#a1a1aa',
   pro: '#6366f1',
   enterprise: '#f59e0b',
 };
 
 export default function Admin() {
-  const [secret, setSecret] = useState(ADMIN_SECRET || sessionStorage.getItem('intyx_admin_secret') || '');
+  const [secret, setSecret] = useState(
+    ADMIN_SECRET || sessionStorage.getItem('intyx_admin_secret') || ''
+  );
   const [authed, setAuthed] = useState(false);
-  const [stats, setStats] = useState(null);
-  const [licenses, setLicenses] = useState([]);
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [licenses, setLicenses] = useState<AdminLicense[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const authHeaders = useCallback(() => ({
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${secret}`,
-  }), [secret]);
+  const authHeaders = useCallback(
+    () => ({
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${secret}`,
+    }),
+    [secret]
+  );
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -34,17 +40,26 @@ export default function Admin() {
         return;
       }
       if (!statsRes.ok || !licRes.ok) throw new Error('Server error');
-      const [statsData, licData] = await Promise.all([statsRes.json(), licRes.json()]);
+      const [statsData, licData] = await Promise.all([
+        statsRes.json() as Promise<AdminStats>,
+        licRes.json() as Promise<{ licenses: AdminLicense[] }>,
+      ]);
       setStats(statsData);
       setLicenses(licData.licenses || []);
       setAuthed(true);
       sessionStorage.setItem('intyx_admin_secret', secret);
     } catch (err) {
-      setError(err.message);
+      setError((err as Error).message);
     } finally {
       setLoading(false);
     }
   }, [secret, authHeaders]);
+
+  // Auto-fetch if secret pre-filled from env
+  useEffect(() => {
+    if (secret && !authed) fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!authed) {
     return (
@@ -80,7 +95,7 @@ export default function Admin() {
     );
   }
 
-  const planOrder = ['starter', 'pro', 'enterprise'];
+  const planOrder: Plan[] = ['starter', 'pro', 'enterprise'];
 
   return (
     <main id="main-content" style={{ maxWidth: 1000, margin: '0 auto', padding: '60px 24px' }}>
@@ -109,7 +124,7 @@ export default function Admin() {
             </div>
             {planOrder.map((plan) => (
               <div key={plan} style={styles.statCard}>
-                <div style={{ ...styles.statValue, color: PLAN_COLORS[plan] || 'var(--text)' }}>
+                <div style={{ ...styles.statValue, color: PLAN_COLORS[plan] ?? 'var(--text)' }}>
                   {stats.by_plan?.[plan] ?? 0}
                 </div>
                 <div style={styles.statLabel}>{plan.charAt(0).toUpperCase() + plan.slice(1)}</div>
@@ -153,7 +168,11 @@ export default function Admin() {
                     <code style={{ fontSize: 12 }}>{lic.api_key_masked}</code>
                   </td>
                   <td style={styles.td}>
-                    <span style={{ ...styles.planBadge, color: PLAN_COLORS[lic.plan] || 'var(--text-muted)', background: `${PLAN_COLORS[lic.plan]}18` }}>
+                    <span style={{
+                      ...styles.planBadge,
+                      color: PLAN_COLORS[lic.plan] ?? 'var(--text-muted)',
+                      background: `${PLAN_COLORS[lic.plan] ?? '#aaa'}18`,
+                    }}>
                       {lic.plan}
                     </span>
                   </td>
@@ -182,101 +201,19 @@ export default function Admin() {
   );
 }
 
-const styles = {
-  sectionHeading: {
-    fontSize: 18,
-    fontWeight: 700,
-    marginBottom: 16,
-  },
-  statsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-    gap: 12,
-  },
-  statCard: {
-    background: 'var(--bg-card)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius)',
-    padding: 20,
-    textAlign: 'center',
-  },
-  statValue: {
-    fontSize: 32,
-    fontWeight: 800,
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 13,
-    color: 'var(--text-muted)',
-  },
-  tableWrap: {
-    background: 'var(--bg-card)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius)',
-    overflow: 'auto',
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-  },
-  th: {
-    padding: '12px 16px',
-    fontSize: 12,
-    fontWeight: 600,
-    color: 'var(--text-muted)',
-    textAlign: 'left',
-    borderBottom: '1px solid var(--border)',
-    whiteSpace: 'nowrap',
-  },
-  td: {
-    padding: '12px 16px',
-    fontSize: 14,
-    borderBottom: '1px solid var(--border)',
-  },
-  planBadge: {
-    fontSize: 11,
-    fontWeight: 700,
-    padding: '3px 10px',
-    borderRadius: 12,
-  },
-  input: {
-    width: '100%',
-    padding: '10px 14px',
-    fontSize: 14,
-    background: '#0c0c0e',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    color: 'var(--text)',
-    outline: 'none',
-    boxSizing: 'border-box',
-  },
-  btnPrimary: {
-    padding: '11px 0',
-    fontSize: 14,
-    fontWeight: 600,
-    color: '#fff',
-    background: '#6366f1',
-    border: 'none',
-    borderRadius: 8,
-    cursor: 'pointer',
-  },
-  btnGhost: {
-    padding: '8px 16px',
-    fontSize: 13,
-    fontWeight: 500,
-    color: 'var(--text-muted)',
-    background: 'transparent',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    cursor: 'pointer',
-  },
-  errorBanner: {
-    padding: '10px 16px',
-    marginBottom: 16,
-    background: 'rgba(239,68,68,0.1)',
-    border: '1px solid rgba(239,68,68,0.3)',
-    borderRadius: 8,
-    color: '#ef4444',
-    fontSize: 14,
-  },
+const styles: Record<string, React.CSSProperties> = {
+  sectionHeading: { fontSize: 18, fontWeight: 700, marginBottom: 16 },
+  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 },
+  statCard: { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 20, textAlign: 'center' },
+  statValue: { fontSize: 32, fontWeight: 800, marginBottom: 4 },
+  statLabel: { fontSize: 13, color: 'var(--text-muted)' },
+  tableWrap: { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'auto' },
+  table: { width: '100%', borderCollapse: 'collapse' },
+  th: { padding: '12px 16px', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' },
+  td: { padding: '12px 16px', fontSize: 14, borderBottom: '1px solid var(--border)' },
+  planBadge: { fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12 },
+  input: { width: '100%', padding: '10px 14px', fontSize: 14, background: '#0c0c0e', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', outline: 'none', boxSizing: 'border-box' },
+  btnPrimary: { padding: '11px 0', fontSize: 14, fontWeight: 600, color: '#fff', background: '#6366f1', border: 'none', borderRadius: 8, cursor: 'pointer' },
+  btnGhost: { padding: '8px 16px', fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border)', borderRadius: 8, cursor: 'pointer' },
+  errorBanner: { padding: '10px 16px', marginBottom: 16, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, color: '#ef4444', fontSize: 14 },
 };
