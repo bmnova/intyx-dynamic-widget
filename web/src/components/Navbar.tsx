@@ -11,6 +11,7 @@ const links: NavLink[] = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/widget-studio', label: 'Studio' },
   { to: '/agent-tasks', label: 'Agent Tasks' },
+  { to: '/analytics', label: 'Analytics' },
 ];
 
 export default function Navbar() {

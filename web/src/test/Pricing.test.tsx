@@ -21,7 +21,7 @@ vi.mock('../lib/paddle', () => ({
 
 // Mock global fetch
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+vi.stubGlobal('fetch', mockFetch);
 
 function renderWithRouter() {
   return render(

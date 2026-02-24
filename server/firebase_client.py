@@ -350,3 +350,81 @@ def save_agent_tasks(api_key: str, tasks: list[dict[str, Any]]) -> None:
     payload = {"tasks": tasks, "updated_at": time.time()}
     db.collection("agent_tasks").document(api_key).set(payload)
     cache_data(f"agent_tasks:{api_key}", payload)
+
+
+# --- Analytics ---
+
+
+def get_widget_analytics(api_key: str) -> dict[str, Any]:
+    """Aggregate interaction data for all widgets owned by this api_key.
+
+    Scans the user_states collection and counts interactions per widget/action.
+    """
+    db = get_db()
+
+    # 1. Collect widget IDs + metadata for this license key
+    widget_docs = (
+        db.collection("widgets")
+        .where("license_key", "==", api_key)
+        .stream()
+    )
+    widget_ids: set[str] = set()
+    widget_meta: dict[str, dict[str, str]] = {}
+    for doc in widget_docs:
+        data = doc.to_dict()
+        widget_ids.add(doc.id)
+        widget_meta[doc.id] = {
+            "name": data.get("name") or data.get("type", doc.id),
+            "type": data.get("type", "unknown"),
+        }
+
+    if not widget_ids:
+        return {
+            "by_widget": {},
+            "totals": {"impression": 0, "tap": 0, "dismiss": 0, "total": 0},
+            "widget_count": 0,
+        }
+
+    # 2. Scan user_states and aggregate interactions
+    by_widget: dict[str, dict[str, int]] = {}
+    for doc in db.collection("user_states").stream():
+        state = doc.to_dict() or {}
+
+        for interaction in state.get("interactions", []):
+            wid = interaction.get("widget_id")
+            if wid and wid in widget_ids:
+                action = interaction.get("action", "other")
+                wid_stats = by_widget.setdefault(wid, {})
+                wid_stats[action] = wid_stats.get(action, 0) + 1
+
+        # dismissed_widgets list is a separate signal
+        for wid in state.get("dismissed_widgets", []):
+            if wid in widget_ids:
+                wid_stats = by_widget.setdefault(wid, {})
+                wid_stats["dismiss"] = wid_stats.get("dismiss", 0) + 1
+
+    # 3. Build per-widget result
+    known_actions = ("impression", "tap", "dismiss", "expand", "link_click")
+    totals: dict[str, int] = {a: 0 for a in known_actions}
+    totals["other"] = 0
+    totals["total"] = 0
+
+    result_by_widget: dict[str, Any] = {}
+    for wid in widget_ids:
+        actions = by_widget.get(wid, {})
+        widget_total = sum(actions.values())
+        result_by_widget[wid] = {
+            **widget_meta.get(wid, {}),
+            "actions": actions,
+            "total": widget_total,
+        }
+        for action, count in actions.items():
+            bucket = action if action in totals else "other"
+            totals[bucket] = totals.get(bucket, 0) + count
+        totals["total"] += widget_total
+
+    return {
+        "by_widget": result_by_widget,
+        "totals": totals,
+        "widget_count": len(widget_ids),
+    }
