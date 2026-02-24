@@ -71,7 +71,7 @@ def validate_config() -> None:
     logger = logging.getLogger(__name__)
     warnings = []
 
-    if not FIREBASE_CREDENTIALS_PATH:
+    if not FIREBASE_CREDENTIALS_PATH and not os.environ.get("FIREBASE_CREDENTIALS_JSON"):
         warnings.append("FIREBASE_CREDENTIALS_PATH not set — using Application Default Credentials")
 
     if not OPENWEATHER_API_KEY:
@@ -95,5 +95,4 @@ def validate_config() -> None:
         logger.error("FIREBASE_PROJECT_ID is required but not set")
         sys.exit(1)
     if not GEMINI_API_KEY:
-        logger.error("GEMINI_API_KEY is required (AI widget suggestions and agent tasks)")
-        sys.exit(1)
+        logger.warning("CONFIG: GEMINI_API_KEY not set — AI widget suggestions and agent tasks will be unavailable")
