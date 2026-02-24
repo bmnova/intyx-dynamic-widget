@@ -6,7 +6,8 @@ import json
 import logging
 from typing import Any
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 from server.config import GEMINI_API_KEY, GEMINI_MODEL_NAME
 
@@ -168,25 +169,24 @@ def _strip_code_fences(text: str) -> str:
 
 
 class GeminiClient:
-    """Wrapper around Google Generative AI SDK for widget operations.
+    """Wrapper around Google GenAI SDK for widget operations.
 
     Use get_gemini_client() for a shared singleton instance.
     """
 
     def __init__(self) -> None:
-        if GEMINI_API_KEY:
-            genai.configure(api_key=GEMINI_API_KEY)
-        self._model = genai.GenerativeModel(GEMINI_MODEL_NAME)
+        self._client = genai.Client(api_key=GEMINI_API_KEY or None)
 
     def suggest_widgets(self, context: dict[str, Any]) -> dict[str, Any]:
         """Suggest widgets based on user context."""
         system = SYSTEM_PROMPT.format(catalog=json.dumps(WIDGET_CATALOG, indent=2))
-
         prompt = f"Kullanici context'i:\n{json.dumps(context, indent=2, ensure_ascii=False)}\n\nBu context'e uygun widget'lari oner."
 
         try:
-            response = self._model.generate_content(
-                [{"role": "user", "parts": [{"text": system + "\n\n" + prompt}]}]
+            response = self._client.models.generate_content(
+                model=GEMINI_MODEL_NAME,
+                contents=prompt,
+                config=types.GenerateContentConfig(system_instruction=system),
             )
             text = _strip_code_fences(response.text)
             return json.loads(text)
@@ -214,7 +214,10 @@ class GeminiClient:
         )
 
         try:
-            response = self._model.generate_content(prompt)
+            response = self._client.models.generate_content(
+                model=GEMINI_MODEL_NAME,
+                contents=prompt,
+            )
             text = _strip_code_fences(response.text)
             params = json.loads(text)
             return {"type": widget_type, "params": params}
