@@ -102,6 +102,105 @@ void main() {
 python -m server.mcp
 ```
 
+## Deployment & Environment Variables
+
+### Lokal Gelistirme (Dev Mode)
+
+Her iki servisi ayri terminallerde calistir:
+
+```bash
+# Terminal 1 — Backend
+cd server
+python -m venv venv && source venv/bin/activate   # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env
+# .env icine en azindan su iki satiri yaz:
+#   GEMINI_API_KEY=<google ai studio'dan alinir>
+#   INTYX_DEV_MODE=true     # lisans dogrulamasi bypass edilir
+python -m server.app
+# → http://localhost:8080/api/health
+
+# Terminal 2 — Frontend
+cd web
+cp .env.example .env
+# .env zaten VITE_API_URL=http://localhost:8080 iceriyor, degistirme
+npm install && npm run dev
+# → http://localhost:3000
+```
+
+`INTYX_DEV_MODE=true` ile backend lisans kontrolu devredisi kalir; gelistirirken her seyi test edebilirsin.
+**Bunu asla production ortamina tasima.**
+
+---
+
+### Production Deployment
+
+#### 1. Backend'i deploy et (Railway / Render / Cloud Run / Docker)
+
+Backend, Vercel'e deploy edilemez — Node deil, Python/Flask. Asagidaki platformlardan birini kullan:
+
+| Platform | Ucretsiz tier | Not |
+|----------|--------------|-----|
+| [Railway](https://railway.app) | Var | En kolay — repo'yu direkt baglayabilirsin |
+| [Render](https://render.com) | Var | `server/` klasorunu root olarak sec |
+| [Google Cloud Run](https://cloud.run) | Var | Dockerfile hazir, `gcloud run deploy` |
+
+**Zorunlu environment variables (backend):**
+
+```env
+FIREBASE_PROJECT_ID=<firebase-proje-adi>
+GEMINI_API_KEY=<google-ai-studio-api-key>
+
+# Firebase credentials: Cloud ortamlarda Application Default Credentials kullanilir.
+# Lokal veya baska platformlarda service account JSON yolunu goster:
+# FIREBASE_CREDENTIALS_PATH=/app/serviceAccountKey.json
+
+# Production'da dev mode'u KAPALI birak (varsayilan zaten kapali):
+# INTYX_DEV_MODE=false
+
+# Opsiyonel ama onerilen — admin ve server erisimini korur:
+# INTYX_SERVER_API_KEY=<openssl rand -hex 32 ile uret>
+```
+
+Deploy ettikten sonra backend URL'ini not et (ornek: `https://intyx-api.railway.app`).
+
+#### 2. Frontend'i Vercel'e deploy et
+
+`web/` klasoru zaten Vercel'e deploy edilmis durumda. Tek eksik: `VITE_API_URL`.
+
+Vercel Dashboard → Project → Settings → Environment Variables:
+
+```
+VITE_API_URL = https://intyx-api.railway.app   ← backend URL'ini buraya yaz
+```
+
+Bu degiskeni ekleyip **Redeploy** yapinca Widget Studio "Generate Widgets", Agent Tasks ve diger API cagrisi yapan her sey calismaya baslayacak.
+
+**Opsiyonel frontend env variables:**
+
+```env
+# Paddle odeme entegrasyonu icin:
+VITE_PADDLE_ENV=production
+VITE_PADDLE_PUBLISHABLE_TOKEN=live_xxx
+VITE_PADDLE_PRICE_IDS={"pro":"pri_xxx","enterprise":"pri_yyy"}
+
+# /admin sayfasini korumak icin (backend INTYX_SERVER_API_KEY ile ayni olmali):
+VITE_ADMIN_SECRET=<gizli-anahtar>
+
+# Dashboard/Studio/AgentTasks icin API key zorunlu kilmak istersen:
+VITE_REQUIRE_AUTH=true
+```
+
+#### Kontrol listesi
+
+- [ ] Firebase projesi olusturuldu ve Firestore aktif
+- [ ] Gemini API key alindi (aistudio.google.com)
+- [ ] Backend platforma deploy edildi ve `/api/health` 200 doniyor
+- [ ] Vercel'de `VITE_API_URL` set edildi ve Redeploy yapildi
+- [ ] (Opsiyonel) Paddle entegrasyonu yapildi
+
+---
+
 ## Proje Yapisi
 
 ```
