@@ -105,7 +105,7 @@ export default function Dashboard() {
 
         <div style={styles.step}>
           <span style={styles.stepNum}>1</span>
-          <div>
+          <div style={{ minWidth: 0, flex: 1 }}>
             <div style={styles.stepTitle}>Add to pubspec.yaml</div>
             <pre style={styles.codeBlock}>{`dependencies:
   intyx_dynamic_widget:
@@ -117,7 +117,7 @@ export default function Dashboard() {
 
         <div style={styles.step}>
           <span style={styles.stepNum}>2</span>
-          <div>
+          <div style={{ minWidth: 0, flex: 1 }}>
             <div style={styles.stepTitle}>Initialize in your app</div>
             <pre style={styles.codeBlock}>{`import 'package:intyx_dynamic_widget/intyx_dynamic_widget.dart';
 
@@ -133,7 +133,7 @@ void main() {
 
         <div style={styles.step}>
           <span style={styles.stepNum}>3</span>
-          <div>
+          <div style={{ minWidth: 0, flex: 1 }}>
             <div style={styles.stepTitle}>Place the widget</div>
             <pre style={styles.codeBlock}>{`DynamicWidgetContainer(
   responseJson: agentResponse,

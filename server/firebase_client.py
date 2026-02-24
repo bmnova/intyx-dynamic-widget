@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import os
 import threading
 import time
 from typing import Any
@@ -28,8 +30,14 @@ def init_firebase() -> None:
             return
 
         cred = None
-        if FIREBASE_CREDENTIALS_PATH:
+        # Priority 1: inline JSON via env var (Railway / Render / etc.)
+        creds_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
+        if creds_json:
+            cred = credentials.Certificate(json.loads(creds_json))
+        # Priority 2: path to JSON file (local dev)
+        elif FIREBASE_CREDENTIALS_PATH:
             cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
+        # Priority 3: Application Default Credentials (Cloud Run / GCP)
 
         firebase_admin.initialize_app(cred, {"projectId": FIREBASE_PROJECT_ID})
         _db = firestore.client()
