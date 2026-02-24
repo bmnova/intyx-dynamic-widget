@@ -105,6 +105,8 @@ def create_app() -> Flask:
 
     @app.before_request
     def _check_api_key():
+        if request.method == "OPTIONS":
+            return None
         if request.path in PUBLIC_PATHS:
             return None
 
