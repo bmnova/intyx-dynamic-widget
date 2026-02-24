@@ -120,6 +120,10 @@ def create_app() -> Flask:
                 body = request.get_json(silent=True) or {}
                 token = body.get("api_key", "")
 
+        # Dev mode bypasses all auth checks
+        if DEV_MODE:
+            return None
+
         if SERVER_API_KEY:
             # Server key matches → admin access
             if token == SERVER_API_KEY:
@@ -138,10 +142,6 @@ def create_app() -> Flask:
             lic = fb.get_cached_data(f"license:{token}")
             if lic and lic.get("active"):
                 return None
-
-        # Allow unauthenticated requests only in explicit dev mode
-        if DEV_MODE:
-            return None
 
         return jsonify({"error": "Unauthorized — set INTYX_DEV_MODE=true for local development or provide a valid API key"}), 401
 
