@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
 
 export default function Dashboard() {
-  const apiKey = localStorage.getItem('intyx_api_key');
+  const apiKey = localStorage.getItem('intyx_api_key') || 'demo';
   const purchasedAt = localStorage.getItem('intyx_purchased_at');
   const [copied, setCopied] = useState(false);
   const [licenseInfo, setLicenseInfo] = useState(null);
