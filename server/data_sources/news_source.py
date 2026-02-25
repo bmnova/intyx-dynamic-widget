@@ -66,6 +66,89 @@ class NewsSource:
             return []
 
     @staticmethod
+    def fetch_headlines(
+        country: str | None = None,
+        category: str | None = None,
+        limit: int = 10,
+    ) -> dict[str, Any]:
+        """Fetch top headlines filtered by country and/or category."""
+        if not NEWS_API_KEY:
+            return {"error": "NEWS_API_KEY not configured", "articles": []}
+
+        params: dict[str, Any] = {"pageSize": min(limit, 100), "apiKey": NEWS_API_KEY}
+        if country:
+            params["country"] = country
+        else:
+            params["country"] = NEWS_API_COUNTRY
+        if category:
+            params["category"] = category
+
+        try:
+            resp = requests.get(f"{NEWSAPI_BASE}/top-headlines", params=params, timeout=10)
+            resp.raise_for_status()
+            data = resp.json()
+            articles = data.get("articles", [])
+            return {
+                "total_results": data.get("totalResults", len(articles)),
+                "country": params.get("country"),
+                "category": category,
+                "articles": [
+                    {
+                        "title": a.get("title", ""),
+                        "description": a.get("description", ""),
+                        "source": a.get("source", {}).get("name", "") if isinstance(a.get("source"), dict) else "",
+                        "url": a.get("url", ""),
+                        "published_at": a.get("publishedAt", ""),
+                    }
+                    for a in articles
+                    if a.get("title") and "[Removed]" not in (a.get("title") or "")
+                ],
+            }
+        except Exception:
+            logger.exception("NewsAPI fetch_headlines failed")
+            return {"error": "Failed to fetch headlines", "articles": []}
+
+    @staticmethod
+    def search_news(query: str, limit: int = 10) -> dict[str, Any]:
+        """Search news articles by keyword using NewsAPI everything endpoint."""
+        if not NEWS_API_KEY:
+            return {"error": "NEWS_API_KEY not configured", "articles": []}
+
+        try:
+            resp = requests.get(
+                f"{NEWSAPI_BASE}/everything",
+                params={
+                    "q": query,
+                    "pageSize": min(limit, 100),
+                    "sortBy": "publishedAt",
+                    "language": "en",
+                    "apiKey": NEWS_API_KEY,
+                },
+                timeout=10,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            articles = data.get("articles", [])
+            return {
+                "query": query,
+                "total_results": data.get("totalResults", len(articles)),
+                "articles": [
+                    {
+                        "title": a.get("title", ""),
+                        "description": a.get("description", ""),
+                        "source": a.get("source", {}).get("name", "") if isinstance(a.get("source"), dict) else "",
+                        "url": a.get("url", ""),
+                        "published_at": a.get("publishedAt", ""),
+                    }
+                    for a in articles
+                    if a.get("title") and "[Removed]" not in (a.get("title") or "")
+                ],
+            }
+        except Exception:
+            logger.exception("NewsAPI search_news failed for query: %s", query)
+            return {"error": "Failed to search news", "articles": []}
+
+    @staticmethod
     def from_api_response(raw: list[dict[str, Any]]) -> list[NewsData]:
         return [
             NewsData(

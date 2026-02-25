@@ -378,6 +378,142 @@ _TOOLS: list[dict[str, Any]] = [
         "schema": {"type": "object", "properties": {}},
         "agent_visible": False,
     },
+    # ── News ─────────────────────────────────────────────────────────────
+    {
+        "name": "get_news_headlines",
+        "description": "Get top news headlines filtered by category and/or country (NewsAPI.org)",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string",
+                    "description": "News category: business, entertainment, general, health, science, sports, technology",
+                },
+                "country": {
+                    "type": "string",
+                    "description": "ISO country code (e.g. us, gb, tr, de). Defaults to configured country.",
+                },
+                "limit": {"type": "integer", "description": "Max articles to return (default 10, max 100)"},
+            },
+        },
+        "agent_visible": True,
+    },
+    {
+        "name": "search_news",
+        "description": "Search news articles by keyword across all sources (NewsAPI.org)",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Search keyword or phrase"},
+                "limit": {"type": "integer", "description": "Max articles to return (default 10)"},
+            },
+            "required": ["query"],
+        },
+        "agent_visible": True,
+    },
+    # ── UV Index ─────────────────────────────────────────────────────────
+    {
+        "name": "get_uv_index",
+        "description": "Get current UV index and sun protection advice for geographic coordinates (currentuvindex.com, no API key required)",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "lat": {"type": "number", "description": "Latitude"},
+                "lon": {"type": "number", "description": "Longitude"},
+            },
+            "required": ["lat", "lon"],
+        },
+        "agent_visible": True,
+    },
+    # ── IP Geolocation ───────────────────────────────────────────────────
+    {
+        "name": "geolocate_ip",
+        "description": "Get country, city, lat/lon, and timezone for an IP address (ip-api.com, no API key required). Leave ip_address empty to geolocate the caller's IP.",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "ip_address": {"type": "string", "description": "IPv4 or IPv6 address to look up. Omit to use caller's IP."},
+            },
+        },
+        "agent_visible": True,
+    },
+    # ── Cryptocurrency ───────────────────────────────────────────────────
+    {
+        "name": "get_crypto_price",
+        "description": "Get current price and 24h stats for a cryptocurrency (CoinGecko, no API key required)",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "coin_id": {
+                    "type": "string",
+                    "description": "CoinGecko coin ID (e.g. bitcoin, ethereum, solana, cardano)",
+                },
+                "currency": {
+                    "type": "string",
+                    "description": "Quote currency code (default usd). Supports usd, eur, try, gbp, btc, etc.",
+                },
+            },
+            "required": ["coin_id"],
+        },
+        "agent_visible": True,
+    },
+    {
+        "name": "get_crypto_top_coins",
+        "description": "Get top N cryptocurrencies ranked by market cap (CoinGecko)",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "limit": {"type": "integer", "description": "Number of coins to return (default 10, max 250)"},
+                "currency": {"type": "string", "description": "Quote currency (default usd)"},
+            },
+        },
+        "agent_visible": True,
+    },
+    {
+        "name": "get_trending_coins",
+        "description": "Get currently trending cryptocurrencies on CoinGecko (top searched in last 24h)",
+        "schema": {"type": "object", "properties": {}},
+        "agent_visible": True,
+    },
+    # ── Sports ───────────────────────────────────────────────────────────
+    {
+        "name": "get_football_fixtures",
+        "description": "Get upcoming football (soccer) fixtures for a competition (football-data.org). Requires FOOTBALL_DATA_API_KEY.",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "competition": {
+                    "type": "string",
+                    "description": "Competition code: PL (Premier League), PD (La Liga), BL1 (Bundesliga), SA (Serie A), FL1 (Ligue 1), CL (Champions League)",
+                },
+                "days_from_today": {
+                    "type": "integer",
+                    "description": "How many days ahead to look for fixtures (default 3)",
+                },
+            },
+        },
+        "agent_visible": True,
+    },
+    {
+        "name": "get_football_standings",
+        "description": "Get current league standings/table for a football competition (football-data.org)",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "competition": {
+                    "type": "string",
+                    "description": "Competition code: PL, PD, BL1, SA, FL1, CL (default PL)",
+                },
+            },
+        },
+        "agent_visible": True,
+    },
+    {
+        "name": "list_football_competitions",
+        "description": "List all supported football competition codes and their names",
+        "schema": {"type": "object", "properties": {}},
+        "agent_visible": False,
+    },
     # ── Gemini agent (natural language) ──────────────────────────────────
     {
         "name": "ask",

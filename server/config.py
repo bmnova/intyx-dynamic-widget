@@ -69,6 +69,9 @@ NEWS_API_COUNTRY = os.environ.get("NEWS_API_COUNTRY", "tr")
 # Leave empty to use the free "demo" token (rate-limited but functional)
 WAQI_API_TOKEN = os.environ.get("WAQI_API_TOKEN", "")
 
+# Sports (football-data.org — free registration at https://www.football-data.org/client/register)
+FOOTBALL_DATA_API_KEY = os.environ.get("FOOTBALL_DATA_API_KEY", "")
+
 
 def validate_config() -> None:
     """Validate that required environment variables are set. Call at startup."""

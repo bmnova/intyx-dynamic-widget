@@ -21,11 +21,16 @@ from server.mcp.agent import run_ask
 from server.mcp.handlers import (
     ai_handlers,
     air_quality_handlers,
+    crypto_handlers,
     earthquake_handlers,
     exchange_rate_handlers,
     holiday_handlers,
+    ip_geo_handlers,
+    news_handlers,
     prayer_times_handlers,
+    sports_handlers,
     trend_handlers,
+    uv_index_handlers,
     weather_handlers,
     widget_handlers,
 )
@@ -80,6 +85,21 @@ TOOL_HANDLERS: dict[str, HandlerFn] = {
     "get_prayer_times": prayer_times_handlers.get_prayer_times,
     "get_prayer_times_by_coords": prayer_times_handlers.get_prayer_times_by_coords,
     "get_prayer_methods": prayer_times_handlers.get_prayer_methods,
+    # News
+    "get_news_headlines": news_handlers.get_news_headlines,
+    "search_news": news_handlers.search_news,
+    # UV Index
+    "get_uv_index": uv_index_handlers.get_uv_index,
+    # IP Geolocation
+    "geolocate_ip": ip_geo_handlers.geolocate_ip,
+    # Cryptocurrency
+    "get_crypto_price": crypto_handlers.get_crypto_price,
+    "get_crypto_top_coins": crypto_handlers.get_crypto_top_coins,
+    "get_trending_coins": crypto_handlers.get_trending_coins,
+    # Sports
+    "get_football_fixtures": sports_handlers.get_football_fixtures,
+    "get_football_standings": sports_handlers.get_football_standings,
+    "list_football_competitions": sports_handlers.list_football_competitions,
 }
 
 
