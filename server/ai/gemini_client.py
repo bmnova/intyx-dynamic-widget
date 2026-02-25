@@ -213,6 +213,12 @@ Bu sayede widget'lar host uygulamanin renk temasina uyumlu gorunur.
 • "viral_trends" varsa → en yuksek engagement'li trendi hero_image/promotional widgeta donustur.
   title = trendin tam adi, button_action = "app://explore?trend=<trend_title>"
 
+GORSEL URL KURALI (KRITIK):
+  - image_url ASLA kendin uretme veya tahminde bulunma.
+  - image_url degerini SADECE context'teki trend nesnesinin "image_url" alanindan al.
+  - Eger trendin "image_url" alani bos ("") veya yoksa, widget params'ina image_url EKLEME.
+  - "https://example.com/...", "https://via.placeholder.com/..." gibi sahte URL'ler YASAK.
+
 • "today_holidays" varsa → o gun icin tematik bir widget MUTLAKA ekle.
 
 • "season" varsa → butun widget icerikleri o mevsime uygun olmali.
