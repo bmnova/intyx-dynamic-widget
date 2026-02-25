@@ -26,6 +26,11 @@ PLAN_MAP = {
     # These are placeholders; replace with real Paddle price IDs
 }
 
+# Map Paddle product IDs to plan names (fallback when price ID not in PLAN_MAP)
+PRODUCT_MAP = {
+    "pro_01kjb1xhk5gtq4tm6m9a5g6x14": "pro",
+}
+
 
 def _verify_signature(payload: bytes, signature: str) -> bool:
     """Verify Paddle webhook HMAC-SHA256 signature."""
@@ -90,12 +95,16 @@ def _handle_transaction_completed(data: dict) -> tuple:
     customer_email = data.get("customer", {}).get("email", "")
     items = data.get("items", [])
 
-    # Determine plan from price ID
+    # Determine plan from price ID, then product ID, then product name
     plan = "starter"
     for item in items:
         price_id = item.get("price", {}).get("id", "")
         if price_id in PLAN_MAP:
             plan = PLAN_MAP[price_id]
+            break
+        product_id = item.get("product", {}).get("id", "")
+        if product_id in PRODUCT_MAP:
+            plan = PRODUCT_MAP[product_id]
             break
         # Fallback: check product name
         product_name = item.get("product", {}).get("name", "").lower()
