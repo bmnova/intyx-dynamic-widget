@@ -2,6 +2,27 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import WidgetCard from '../components/WidgetCard';
 
+interface DataSource {
+  icon: string;
+  name: string;
+  desc: string;
+  badge: string;
+  badgeColor: string;
+  category: string;
+}
+
+const DATA_SOURCES: DataSource[] = [
+  { icon: '⛅', name: 'Weather', desc: 'Current conditions, 5-day forecast, coordinates lookup via OpenWeatherMap.', badge: 'API Key', badgeColor: '#f59e0b', category: 'Environment' },
+  { icon: '💨', name: 'Air Quality', desc: 'Real-time AQI, PM2.5, PM10, O₃, NO₂ levels from WAQI.', badge: 'Free', badgeColor: '#22c55e', category: 'Environment' },
+  { icon: '🌍', name: 'Earthquake', desc: 'Live seismic events worldwide or by area — magnitude, depth, alerts (USGS).', badge: 'Free', badgeColor: '#22c55e', category: 'Safety' },
+  { icon: '💱', name: 'Exchange Rates', desc: 'ECB exchange rates for 30+ currencies, live currency conversion.', badge: 'Free', badgeColor: '#22c55e', category: 'Finance' },
+  { icon: '🕌', name: 'Prayer Times', desc: 'Fajr → Isha for any city or GPS coords, 12 calculation methods (Aladhan).', badge: 'Free', badgeColor: '#22c55e', category: 'Lifestyle' },
+  { icon: '📅', name: 'Holidays', desc: '24+ special days and public holidays with widget suggestions.', badge: 'Built-in', badgeColor: '#6366f1', category: 'Calendar' },
+  { icon: '🔥', name: 'Trends', desc: 'Viral topics from Google Trends & Twitter — filtered by category and platform.', badge: 'Optional Key', badgeColor: '#f59e0b', category: 'Social' },
+  { icon: '📰', name: 'News', desc: 'Top headlines by country and category via NewsAPI.org.', badge: 'API Key', badgeColor: '#f59e0b', category: 'Content' },
+  { icon: '🔮', name: 'Horoscope', desc: 'AI-generated daily horoscope content powered by Gemini.', badge: 'Built-in', badgeColor: '#6366f1', category: 'Lifestyle' },
+];
+
 interface WidgetEntry {
   icon: string;
   title: string;
@@ -225,6 +246,44 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Data Sources */}
+      <section aria-labelledby="datasources-heading" style={styles.section}>
+        <h2 id="datasources-heading" style={styles.h2}>Live Data Sources</h2>
+        <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginBottom: 8 }}>
+          The AI agent pulls from real-time data sources to make every widget contextually relevant.
+        </p>
+        <p style={{ textAlign: 'center', marginBottom: 36 }}>
+          <Link to="/integrations" style={{ color: '#6366f1', fontSize: 13, fontWeight: 600 }}>
+            View all integrations →
+          </Link>
+        </p>
+        <div style={styles.dsGrid}>
+          {DATA_SOURCES.map((ds) => (
+            <div key={ds.name} style={styles.dsCard}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                <span aria-hidden="true" style={{ fontSize: 28, lineHeight: 1 }}>{ds.icon}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                    <span style={{ fontWeight: 700, fontSize: 15 }}>{ds.name}</span>
+                    <span style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: 20,
+                      background: `${ds.badgeColor}22`,
+                      color: ds.badgeColor,
+                      border: `1px solid ${ds.badgeColor}44`,
+                      letterSpacing: '0.03em',
+                    }}>{ds.badge}</span>
+                  </div>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>{ds.desc}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Widget catalog */}
       <section aria-labelledby="catalog-heading" style={styles.section}>
         <h2 id="catalog-heading" style={styles.h2}>Widget Catalog</h2>
@@ -335,4 +394,6 @@ const styles: Record<string, React.CSSProperties> = {
   demoSelector: { display: 'flex', flexDirection: 'column', gap: 4 },
   demoTab: { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, border: '1px solid transparent', cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s, border-color 0.15s', background: 'transparent' },
   demoPreview: { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 24 },
+  dsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 },
+  dsCard: { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '18px 20px', transition: 'border-color 0.2s' },
 };
