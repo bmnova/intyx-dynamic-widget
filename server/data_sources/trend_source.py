@@ -163,6 +163,8 @@ class TrendSource:
                 name = trend.get("name", "")
                 tweet_volume = trend.get("tweet_volume") or 0
                 url = trend.get("url", "")
+                keyword = name.lstrip("#")
+                image_url = _fetch_wikipedia_image(keyword)
 
                 items.append(TrendItem(
                     title=name,
@@ -170,6 +172,7 @@ class TrendSource:
                     category=_guess_category(name, ""),
                     hashtags=[name] if name.startswith("#") else [],
                     url=url,
+                    image_url=image_url,
                     engagement=tweet_volume,
                     region=TRENDS_REGION,
                 ))
@@ -193,6 +196,35 @@ class TrendSource:
             )
             for item in raw
         ]
+
+
+def _fetch_wikipedia_image(keyword: str) -> str:
+    """Try to fetch a thumbnail image URL from Wikipedia for the given keyword.
+
+    Returns empty string if nothing found or on any error.
+    """
+    try:
+        resp = requests.get(
+            "https://en.wikipedia.org/w/api.php",
+            params={
+                "action": "query",
+                "titles": keyword,
+                "prop": "pageimages",
+                "pithumbsize": 800,
+                "format": "json",
+                "redirects": 1,
+            },
+            timeout=5,
+        )
+        resp.raise_for_status()
+        pages = resp.json().get("query", {}).get("pages", {})
+        for page in pages.values():
+            thumb = page.get("thumbnail", {}).get("source", "")
+            if thumb:
+                return thumb
+    except Exception:
+        pass
+    return ""
 
 
 def _guess_category(title: str, description: str) -> str:

@@ -127,6 +127,12 @@ Bu trendleri kullanarak:
   - button_action'a uygulamanin deep link'ini koy (ornegin "app://generate?trend=<trend_title>")
   - Yuksek engagement'li trendlere yuksek priority ver
 
+GORSEL URL KURALI (KRITIK):
+  - image_url ASLA kendin uretme veya tahminde bulunma.
+  - image_url degerini SADECE context'teki trend nesnesinin "image_url" alanindan al.
+  - Eger trendin "image_url" alani bos ("") veya yoksa, widget params'ina image_url EKLEME.
+  - "https://example.com/...", "https://via.placeholder.com/..." gibi sahte URL'ler YASAK.
+
 Eger context icinde color_palette varsa, widget'larin common alanina aynen ekle.
 Bu sayede widget'lar host uygulamanin renk temasina uyumlu gorunur.
 
