@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import type { AgentTask, TestResult, WidgetResponse } from '../types';
 
 const EXAMPLE_TASKS = [
   'My app is a fashion app; show a widget that suggests outfit combinations based on the weather',
@@ -11,18 +12,19 @@ const EXAMPLE_TASKS = [
 
 export default function AgentTasks() {
   const apiKey = localStorage.getItem('intyx_api_key') || 'demo';
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState<AgentTask[]>([]);
   const [newTask, setNewTask] = useState('');
   const [taskName, setTaskName] = useState('');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [testResult, setTestResult] = useState(null);
-  const [testing, setTesting] = useState(null);
-  const [error, setError] = useState(null);
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
+  const [testing, setTesting] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!apiKey) return;
     fetchTasks();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchTasks = async () => {
@@ -30,15 +32,14 @@ export default function AgentTasks() {
     try {
       const res = await fetch(`${API_BASE_URL}/api/agent-tasks?api_key=${encodeURIComponent(apiKey)}`);
       if (!res.ok) throw new Error('Failed to load tasks');
-      const data = await res.json();
+      const data: { tasks: AgentTask[] } = await res.json();
       setTasks(data.tasks || []);
     } catch (err) {
       console.error('Failed to fetch tasks:', err);
-      // Fallback to localStorage
       try {
         const saved = localStorage.getItem('intyx_agent_tasks');
-        if (saved) setTasks(JSON.parse(saved));
-      } catch (_) { /* ignore parse errors */ }
+        if (saved) setTasks(JSON.parse(saved) as AgentTask[]);
+      } catch { /* ignore parse errors */ }
     } finally {
       setLoading(false);
     }
@@ -59,20 +60,20 @@ export default function AgentTasks() {
         }),
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
+        const err: { error?: string } = await res.json().catch(() => ({}));
         throw new Error(err.error || 'Could not create task');
       }
       setNewTask('');
       setTaskName('');
       await fetchTasks();
     } catch (err) {
-      setError(err.message);
+      setError((err as Error).message);
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: string) => {
     try {
       const res = await fetch(
         `${API_BASE_URL}/api/agent-tasks/${id}?api_key=${encodeURIComponent(apiKey)}`,
@@ -81,11 +82,11 @@ export default function AgentTasks() {
       if (!res.ok) throw new Error('Could not delete');
       setTasks(tasks.filter((t) => t.id !== id));
     } catch (err) {
-      setError(err.message);
+      setError((err as Error).message);
     }
   };
 
-  const handleToggle = async (id) => {
+  const handleToggle = async (id: string) => {
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
     try {
@@ -97,11 +98,11 @@ export default function AgentTasks() {
       if (!res.ok) throw new Error('Could not update');
       setTasks(tasks.map((t) => (t.id === id ? { ...t, active: !t.active } : t)));
     } catch (err) {
-      setError(err.message);
+      setError((err as Error).message);
     }
   };
 
-  const handleTest = async (task) => {
+  const handleTest = async (task: AgentTask) => {
     setTesting(task.id);
     setTestResult(null);
     try {
@@ -115,13 +116,13 @@ export default function AgentTasks() {
         }),
       });
       if (!res.ok) throw new Error('Test failed');
-      const data = await res.json();
+      const data: { widgets: WidgetResponse[] } = await res.json();
       setTestResult({ taskId: task.id, widgets: data.widgets || [] });
     } catch (err) {
       setTestResult({
         taskId: task.id,
         widgets: [],
-        error: err.message,
+        error: (err as Error).message,
       });
     } finally {
       setTesting(null);
@@ -301,7 +302,7 @@ DynamicWidgetContainer(
   );
 }
 
-const styles = {
+const styles: Record<string, React.CSSProperties> = {
   card: {
     background: 'var(--bg-card)',
     border: '1px solid var(--border)',

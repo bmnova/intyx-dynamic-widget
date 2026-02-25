@@ -1,7 +1,15 @@
 import { useState } from 'react';
 import { API_BASE_URL } from '../config';
+import type { WidgetResponse, SuggestWidgetResponse } from '../types';
 
-const WIDGET_CATALOG = [
+interface CatalogEntry {
+  type: string;
+  icon: string;
+  label: string;
+  desc: string;
+}
+
+const WIDGET_CATALOG: CatalogEntry[] = [
   { type: 'hero_image', icon: '🖼', label: 'Hero Image', desc: 'Full-width hero with overlay title and CTA button' },
   { type: 'promotional', icon: '🏷', label: 'Promotional', desc: 'Campaign card with badge, discount info' },
   { type: 'carousel', icon: '🎠', label: 'Carousel', desc: 'Horizontal scrolling multi-content cards' },
@@ -20,28 +28,25 @@ const WIDGET_CATALOG = [
   { type: 'functional', icon: '🎯', label: 'Functional', desc: 'Action-focused card with buttons' },
 ];
 
+type TabKey = 'catalog' | 'prompt' | 'preview';
+
 export default function WidgetStudio() {
   const apiKey = localStorage.getItem('intyx_api_key') || 'dev-key';
-  const [selected, setSelected] = useState([]);
+  const [selected, setSelected] = useState<string[]>([]);
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
-  const [tab, setTab] = useState('catalog'); // catalog | prompt | preview
+  const [result, setResult] = useState<SuggestWidgetResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<TabKey>('catalog');
 
-  const toggleWidget = (type) => {
+  const toggleWidget = (type: string) => {
     setSelected((prev) =>
       prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     );
   };
 
-  const selectAll = () => {
-    setSelected(WIDGET_CATALOG.map((w) => w.type));
-  };
-
-  const clearSelection = () => {
-    setSelected([]);
-  };
+  const selectAll = () => setSelected(WIDGET_CATALOG.map((w) => w.type));
+  const clearSelection = () => setSelected([]);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -61,17 +66,14 @@ export default function WidgetStudio() {
     try {
       const res = await fetch(`${API_BASE_URL}/api/ai/suggest-widget`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({ context }),
       });
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
+        const errData: { error?: string } = await res.json().catch(() => ({}));
         throw new Error(errData.error || `Request failed (${res.status})`);
       }
-      const data = await res.json();
+      const data: SuggestWidgetResponse = await res.json();
       setResult(data);
       setTab('preview');
     } catch (err) {
@@ -79,7 +81,7 @@ export default function WidgetStudio() {
       setError(
         isNetworkErr
           ? 'Backend unreachable. Set VITE_API_URL in Vercel environment variables to point to your deployed API.'
-          : err.message
+          : (err as Error).message
       );
     } finally {
       setLoading(false);
@@ -95,28 +97,30 @@ export default function WidgetStudio() {
 
       {/* Tabs */}
       <div role="tablist" aria-label="Widget studio steps" style={styles.tabs}>
-        {[
-          { key: 'catalog', label: '1. Select Widgets', count: selected.length },
-          { key: 'prompt', label: '2. Write Prompt' },
-          { key: 'preview', label: '3. Preview', disabled: !result },
-        ].map((t) => (
+        {([
+          { key: 'catalog' as TabKey, label: '1. Select Widgets', count: selected.length },
+          { key: 'prompt' as TabKey, label: '2. Write Prompt' },
+          { key: 'preview' as TabKey, label: '3. Preview', disabled: !result },
+        ] as const).map((t) => (
           <button
             key={t.key}
             role="tab"
             aria-selected={tab === t.key}
             aria-controls={`tabpanel-${t.key}`}
             id={`tab-${t.key}`}
-            onClick={() => !t.disabled && setTab(t.key)}
-            aria-disabled={t.disabled ? true : undefined}
+            onClick={() => !('disabled' in t && t.disabled) && setTab(t.key)}
+            aria-disabled={'disabled' in t && t.disabled ? true : undefined}
             style={{
               ...styles.tab,
               borderColor: tab === t.key ? '#6366f1' : 'transparent',
-              color: tab === t.key ? '#fff' : t.disabled ? '#52525b' : '#a1a1aa',
-              cursor: t.disabled ? 'default' : 'pointer',
+              color: tab === t.key ? '#fff' : ('disabled' in t && t.disabled) ? '#52525b' : '#a1a1aa',
+              cursor: ('disabled' in t && t.disabled) ? 'default' : 'pointer',
             }}
           >
             {t.label}
-            {t.count > 0 && <span aria-label={`${t.count} selected`} style={styles.tabBadge}>{t.count}</span>}
+            {'count' in t && t.count > 0 && (
+              <span aria-label={`${t.count} selected`} style={styles.tabBadge}>{t.count}</span>
+            )}
           </button>
         ))}
       </div>
@@ -180,20 +184,18 @@ export default function WidgetStudio() {
             <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Describe Your App</h2>
             <p id="prompt-hint" style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>
               Tell the AI agent what your app does and what kind of widgets you want.
-              The more detail you give, the better the results.
             </p>
             <label htmlFor="studio-prompt" className="visually-hidden">Describe your app and desired widgets</label>
             <textarea
               id="studio-prompt"
               aria-describedby="prompt-hint"
-              placeholder={'Example: My app is a fashion e-commerce app. I want to show:\n- Weather-based outfit suggestions\n- Seasonal campaign banners\n- Trending style recommendations\n- User rating prompts after purchase'}
+              placeholder={'Example: My app is a fashion e-commerce app. I want to show:\n- Weather-based outfit suggestions\n- Seasonal campaign banners'}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               style={styles.textarea}
               rows={8}
             />
 
-            {/* Quick prompt templates */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8 }}>Quick templates:</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -205,11 +207,7 @@ export default function WidgetStudio() {
                   'News app — trending topics and breaking alerts',
                   'Travel app — destination weather and packing tips',
                 ].map((tpl, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setPrompt(tpl)}
-                    style={styles.templateChip}
-                  >
+                  <button key={i} onClick={() => setPrompt(tpl)} style={styles.templateChip}>
                     {tpl}
                   </button>
                 ))}
@@ -233,16 +231,11 @@ export default function WidgetStudio() {
             )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
-              <button onClick={() => setTab('catalog')} style={styles.btnGhost}>
-                ← Back to Catalog
-              </button>
+              <button onClick={() => setTab('catalog')} style={styles.btnGhost}>← Back to Catalog</button>
               <button
                 onClick={handleGenerate}
                 disabled={loading || !prompt.trim()}
-                style={{
-                  ...styles.btnPrimary,
-                  opacity: loading || !prompt.trim() ? 0.5 : 1,
-                }}
+                style={{ ...styles.btnPrimary, opacity: loading || !prompt.trim() ? 0.5 : 1 }}
               >
                 {loading ? 'Generating...' : 'Generate Widgets'}
               </button>
@@ -286,14 +279,7 @@ export default function WidgetStudio() {
                       {widget.common?.priority && (
                         <span style={styles.priorityBadge}>P{widget.common.priority}</span>
                       )}
-                      <span style={{
-                        fontSize: 11,
-                        padding: '2px 8px',
-                        borderRadius: 10,
-                        background: 'var(--success-muted)',
-                        color: 'var(--success)',
-                        fontWeight: 600,
-                      }}>
+                      <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: 'var(--success-muted)', color: 'var(--success)', fontWeight: 600 }}>
                         Ready
                       </span>
                     </div>
@@ -302,9 +288,7 @@ export default function WidgetStudio() {
                     <WidgetPreview widget={widget} />
                   </div>
                   <details style={{ marginTop: 12 }}>
-                    <summary style={{ fontSize: 13, color: 'var(--text-muted)', cursor: 'pointer' }}>
-                      View JSON
-                    </summary>
+                    <summary style={{ fontSize: 13, color: 'var(--text-muted)', cursor: 'pointer' }}>View JSON</summary>
                     <pre style={styles.codeBlock}>{JSON.stringify(widget, null, 2)}</pre>
                   </details>
                 </div>
@@ -317,22 +301,17 @@ export default function WidgetStudio() {
             </div>
           )}
 
-          {/* Save as Agent Task */}
           <div style={{ ...styles.card, marginTop: 24 }}>
             <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Save as Agent Task</h3>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>
-              Save this prompt as a reusable agent task. Your Flutter app will automatically
-              resolve it and show these widgets to your users.
+              Save this prompt as a reusable agent task for your Flutter app.
             </p>
             <SaveAsTask prompt={prompt} apiKey={apiKey} />
           </div>
 
-          {/* Raw JSON */}
           <details style={{ marginTop: 16 }}>
             <summary style={styles.rawToggle}>Full API Response</summary>
-            <pre style={{ ...styles.codeBlock, marginTop: 8 }}>
-              {JSON.stringify(result, null, 2)}
-            </pre>
+            <pre style={{ ...styles.codeBlock, marginTop: 8 }}>{JSON.stringify(result, null, 2)}</pre>
           </details>
         </div>
       )}
@@ -342,12 +321,10 @@ export default function WidgetStudio() {
   );
 }
 
-/* ── Inline widget preview component ─────────────────────────────── */
-
-function WidgetPreview({ widget }) {
+function WidgetPreview({ widget }: { widget: WidgetResponse }) {
   const { type, params = {} } = widget;
 
-  const previewBox = {
+  const box: React.CSSProperties = {
     background: '#0c0c0e',
     border: '1px solid var(--border)',
     borderRadius: 10,
@@ -357,123 +334,93 @@ function WidgetPreview({ widget }) {
 
   if (type === 'banner') {
     return (
-      <div style={{ ...previewBox, textAlign: 'center', fontSize: 15 }}>
-        {params.emoji && <span style={{ marginRight: 8, fontSize: 20 }}>{params.emoji}</span>}
-        {params.text}
+      <div style={{ ...box, textAlign: 'center', fontSize: 15 }}>
+        {params.emoji && <span style={{ marginRight: 8, fontSize: 20 }}>{String(params.emoji)}</span>}
+        {String(params.text ?? '')}
       </div>
     );
   }
-
   if (type === 'hero_image') {
     return (
-      <div style={{
-        ...previewBox,
-        backgroundImage: params.image_url ? `url(${params.image_url})` : undefined,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        minHeight: 120,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'flex-end',
-      }}>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>{params.title}</div>
-        {params.button_text && (
-          <span style={{ marginTop: 8, fontSize: 13, color: '#6366f1', fontWeight: 600 }}>
-            {params.button_text} →
-          </span>
-        )}
+      <div style={{ ...box, backgroundImage: params.image_url ? `url(${String(params.image_url)})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: 120, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+        <div style={{ fontSize: 18, fontWeight: 700 }}>{String(params.title ?? '')}</div>
+        {params.button_text && <span style={{ marginTop: 8, fontSize: 13, color: '#6366f1', fontWeight: 600 }}>{String(params.button_text)} →</span>}
       </div>
     );
   }
-
   if (type === 'promotional') {
     return (
-      <div style={previewBox}>
-        {params.badge_text && <span style={styles.previewBadge}>{params.badge_text}</span>}
-        <div style={{ fontSize: 16, fontWeight: 700, marginTop: 8 }}>{params.title}</div>
-        <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{params.description}</div>
+      <div style={box}>
+        {params.badge_text && <span style={previewBadgeStyle}>{String(params.badge_text)}</span>}
+        <div style={{ fontSize: 16, fontWeight: 700, marginTop: 8 }}>{String(params.title ?? '')}</div>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{String(params.description ?? '')}</div>
       </div>
     );
   }
-
   if (type === 'countdown_banner') {
     return (
-      <div style={{ ...previewBox, textAlign: 'center' }}>
-        <div style={{ fontSize: 15, fontWeight: 600 }}>{params.title}</div>
+      <div style={{ ...box, textAlign: 'center' }}>
+        <div style={{ fontSize: 15, fontWeight: 600 }}>{String(params.title ?? '')}</div>
         <div style={{ fontSize: 24, fontWeight: 800, color: '#6366f1', margin: '8px 0' }}>00:00:00</div>
-        {params.button_text && <span style={{ fontSize: 13, color: '#818cf8' }}>{params.button_text}</span>}
+        {params.button_text && <span style={{ fontSize: 13, color: '#818cf8' }}>{String(params.button_text)}</span>}
       </div>
     );
   }
-
   if (type === 'rating') {
     return (
-      <div style={{ ...previewBox, textAlign: 'center' }}>
-        <div style={{ fontSize: 14, fontWeight: 600 }}>{params.title}</div>
-        <div style={{ fontSize: 28, margin: '8px 0', letterSpacing: 4 }}>
-          {'★'.repeat(params.max_stars || 5)}
-        </div>
-        {params.subtitle && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{params.subtitle}</div>}
+      <div style={{ ...box, textAlign: 'center' }}>
+        <div style={{ fontSize: 14, fontWeight: 600 }}>{String(params.title ?? '')}</div>
+        <div style={{ fontSize: 28, margin: '8px 0', letterSpacing: 4 }}>{'★'.repeat(Number(params.max_stars) || 5)}</div>
+        {params.subtitle && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{String(params.subtitle)}</div>}
       </div>
     );
   }
-
   if (type === 'poll') {
+    const options = Array.isArray(params.options) ? params.options : [];
     return (
-      <div style={previewBox}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10 }}>{params.question}</div>
-        {(params.options || []).map((opt, i) => (
-          <div key={i} style={{
-            padding: '8px 12px',
-            marginBottom: 6,
-            border: '1px solid var(--border)',
-            borderRadius: 6,
-            fontSize: 13,
-            cursor: 'pointer',
-          }}>
-            {typeof opt === 'string' ? opt : opt.label || opt.text || JSON.stringify(opt)}
+      <div style={box}>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10 }}>{String(params.question ?? '')}</div>
+        {options.map((opt, i) => (
+          <div key={i} style={{ padding: '8px 12px', marginBottom: 6, border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>
+            {typeof opt === 'string' ? opt : (opt as { label?: string; text?: string }).label ?? (opt as { label?: string; text?: string }).text ?? JSON.stringify(opt)}
           </div>
         ))}
       </div>
     );
   }
-
   if (type === 'progress') {
-    const pct = params.progress || 0;
+    const pct = Number(params.progress) || 0;
     return (
-      <div style={previewBox}>
-        <div style={{ fontSize: 14, fontWeight: 600 }}>{params.title}</div>
+      <div style={box}>
+        <div style={{ fontSize: 14, fontWeight: 600 }}>{String(params.title ?? '')}</div>
         <div style={{ height: 8, borderRadius: 4, background: '#27272a', marginTop: 10, overflow: 'hidden' }}>
           <div style={{ height: '100%', width: `${pct}%`, background: '#6366f1', borderRadius: 4 }} />
         </div>
-        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
-          {params.progress_label || `${pct}%`}
-        </div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>{String(params.progress_label ?? `${pct}%`)}</div>
       </div>
     );
   }
-
-  // Fallback: generic card
   return (
-    <div style={previewBox}>
-      {params.title && <div style={{ fontSize: 15, fontWeight: 600 }}>{params.title}</div>}
-      {params.subtitle && <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{params.subtitle}</div>}
-      {params.description && <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{params.description}</div>}
-      {params.message && <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{params.message}</div>}
-      {params.content && <div style={{ fontSize: 13, marginTop: 4 }}>{params.content}</div>}
-      {params.text && <div style={{ fontSize: 14, marginTop: 4 }}>{params.text}</div>}
+    <div style={box}>
+      {params.title && <div style={{ fontSize: 15, fontWeight: 600 }}>{String(params.title)}</div>}
+      {params.subtitle && <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{String(params.subtitle)}</div>}
+      {params.description && <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{String(params.description)}</div>}
+      {params.text && <div style={{ fontSize: 14, marginTop: 4 }}>{String(params.text)}</div>}
       {params.action_text && (
         <span style={{ fontSize: 13, color: '#6366f1', fontWeight: 600, marginTop: 8, display: 'inline-block' }}>
-          {params.action_text} →
+          {String(params.action_text)} →
         </span>
       )}
     </div>
   );
 }
 
-/* ── Save-as-task mini component ─────────────────────────────────── */
+const previewBadgeStyle: React.CSSProperties = {
+  fontSize: 11, fontWeight: 700, color: '#f59e0b',
+  background: 'rgba(245,158,11,0.15)', padding: '3px 10px', borderRadius: 12,
+};
 
-function SaveAsTask({ prompt, apiKey }) {
+function SaveAsTask({ prompt, apiKey }: { prompt: string; apiKey: string }) {
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -484,16 +431,10 @@ function SaveAsTask({ prompt, apiKey }) {
       const res = await fetch(`${API_BASE_URL}/api/agent-tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          api_key: apiKey,
-          task: prompt,
-          name: name.trim() || 'Widget Studio Task',
-        }),
+        body: JSON.stringify({ api_key: apiKey, task: prompt, name: name.trim() || 'Widget Studio Task' }),
       });
       if (res.ok) setSaved(true);
-    } catch {
-      /* ignore – best effort */
-    } finally {
+    } catch { /* best effort */ } finally {
       setSaving(false);
     }
   };
@@ -504,232 +445,35 @@ function SaveAsTask({ prompt, apiKey }) {
 
   return (
     <div style={{ display: 'flex', gap: 8 }}>
-      <input
-        type="text"
-        placeholder="Task name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        style={{ ...styles.input, flex: 1, marginBottom: 0 }}
-      />
-      <button onClick={handleSave} disabled={saving} style={styles.btnPrimary}>
-        {saving ? 'Saving...' : 'Save'}
-      </button>
+      <input type="text" placeholder="Task name" value={name} onChange={(e) => setName(e.target.value)} style={{ ...styles.input, flex: 1, marginBottom: 0 }} />
+      <button onClick={handleSave} disabled={saving} style={styles.btnPrimary}>{saving ? 'Saving...' : 'Save'}</button>
     </div>
   );
 }
 
-/* ── Styles ──────────────────────────────────────────────────────── */
-
-const styles = {
-  tabs: {
-    display: 'flex',
-    gap: 0,
-    marginBottom: 24,
-    borderBottom: '1px solid var(--border)',
-  },
-  tab: {
-    padding: '12px 20px',
-    fontSize: 14,
-    fontWeight: 600,
-    background: 'none',
-    border: 'none',
-    borderBottom: '2px solid transparent',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-  },
-  tabBadge: {
-    fontSize: 11,
-    fontWeight: 700,
-    color: '#fff',
-    background: '#6366f1',
-    padding: '1px 7px',
-    borderRadius: 10,
-  },
-  card: {
-    background: 'var(--bg-card)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius)',
-    padding: 24,
-  },
-  catalogGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-    gap: 12,
-  },
-  widgetCard: {
-    position: 'relative',
-    textAlign: 'left',
-    padding: 16,
-    borderRadius: 'var(--radius)',
-    border: '1px solid var(--border)',
-    cursor: 'pointer',
-    transition: 'border-color 0.15s, background 0.15s',
-  },
-  widgetIcon: {
-    fontSize: 24,
-    marginBottom: 8,
-  },
-  checkMark: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 22,
-    height: 22,
-    borderRadius: '50%',
-    background: '#6366f1',
-    color: '#fff',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 12,
-    fontWeight: 700,
-  },
-  input: {
-    width: '100%',
-    padding: '10px 14px',
-    fontSize: 14,
-    background: '#0c0c0e',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    color: 'var(--text)',
-    marginBottom: 12,
-    outline: 'none',
-  },
-  textarea: {
-    width: '100%',
-    padding: '14px 16px',
-    fontSize: 14,
-    background: '#0c0c0e',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    color: 'var(--text)',
-    marginBottom: 16,
-    outline: 'none',
-    resize: 'vertical',
-    fontFamily: 'inherit',
-    lineHeight: 1.6,
-  },
-  templateChip: {
-    padding: '6px 12px',
-    fontSize: 12,
-    color: 'var(--text-muted)',
-    background: 'rgba(99,102,241,0.08)',
-    border: '1px solid rgba(99,102,241,0.2)',
-    borderRadius: 20,
-    cursor: 'pointer',
-    textAlign: 'left',
-  },
-  selectionSummary: {
-    padding: 12,
-    background: 'rgba(99,102,241,0.06)',
-    border: '1px solid rgba(99,102,241,0.15)',
-    borderRadius: 8,
-  },
-  selectedChip: {
-    fontSize: 12,
-    padding: '3px 10px',
-    background: 'var(--primary-muted)',
-    color: '#818cf8',
-    borderRadius: 14,
-    fontWeight: 500,
-  },
-  btnPrimary: {
-    padding: '10px 24px',
-    fontSize: 14,
-    fontWeight: 600,
-    color: '#fff',
-    background: '#6366f1',
-    border: 'none',
-    borderRadius: 8,
-    cursor: 'pointer',
-  },
-  btnGhost: {
-    padding: '8px 16px',
-    fontSize: 13,
-    fontWeight: 500,
-    color: 'var(--text-muted)',
-    background: 'transparent',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    cursor: 'pointer',
-  },
-  errorBanner: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '10px 16px',
-    marginBottom: 16,
-    background: 'rgba(239,68,68,0.1)',
-    border: '1px solid rgba(239,68,68,0.3)',
-    borderRadius: 8,
-    color: '#ef4444',
-    fontSize: 14,
-  },
-  errorClose: {
-    background: 'none',
-    border: 'none',
-    color: '#ef4444',
-    fontWeight: 700,
-    fontSize: 16,
-    cursor: 'pointer',
-  },
-  previewCard: {
-    background: 'var(--bg-card)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius)',
-    padding: 20,
-  },
-  previewHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  previewIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    background: 'var(--primary-muted)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 20,
-  },
+const styles: Record<string, React.CSSProperties> = {
+  tabs: { display: 'flex', gap: 0, marginBottom: 24, borderBottom: '1px solid var(--border)' },
+  tab: { padding: '12px 20px', fontSize: 14, fontWeight: 600, background: 'none', border: 'none', borderBottom: '2px solid transparent', display: 'flex', alignItems: 'center', gap: 8 },
+  tabBadge: { fontSize: 11, fontWeight: 700, color: '#fff', background: '#6366f1', padding: '1px 7px', borderRadius: 10 },
+  card: { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 24 },
+  catalogGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 },
+  widgetCard: { position: 'relative', textAlign: 'left', padding: 16, borderRadius: 'var(--radius)', border: '1px solid var(--border)', cursor: 'pointer', transition: 'border-color 0.15s, background 0.15s' },
+  widgetIcon: { fontSize: 24, marginBottom: 8 },
+  checkMark: { position: 'absolute', top: 10, right: 10, width: 22, height: 22, borderRadius: '50%', background: '#6366f1', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 },
+  input: { width: '100%', padding: '10px 14px', fontSize: 14, background: '#0c0c0e', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', marginBottom: 12, outline: 'none' },
+  textarea: { width: '100%', padding: '14px 16px', fontSize: 14, background: '#0c0c0e', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', marginBottom: 16, outline: 'none', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6 },
+  templateChip: { padding: '6px 12px', fontSize: 12, color: 'var(--text-muted)', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 20, cursor: 'pointer', textAlign: 'left' },
+  selectionSummary: { padding: 12, background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 8 },
+  selectedChip: { fontSize: 12, padding: '3px 10px', background: 'var(--primary-muted)', color: '#818cf8', borderRadius: 14, fontWeight: 500 },
+  btnPrimary: { padding: '10px 24px', fontSize: 14, fontWeight: 600, color: '#fff', background: '#6366f1', border: 'none', borderRadius: 8, cursor: 'pointer' },
+  btnGhost: { padding: '8px 16px', fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border)', borderRadius: 8, cursor: 'pointer' },
+  errorBanner: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', marginBottom: 16, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, color: '#ef4444', fontSize: 14 },
+  errorClose: { background: 'none', border: 'none', color: '#ef4444', fontWeight: 700, fontSize: 16, cursor: 'pointer' },
+  previewCard: { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 20 },
+  previewHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  previewIcon: { width: 40, height: 40, borderRadius: 10, background: 'var(--primary-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 },
   previewBody: {},
-  previewBadge: {
-    fontSize: 11,
-    fontWeight: 700,
-    color: '#f59e0b',
-    background: 'rgba(245,158,11,0.15)',
-    padding: '3px 10px',
-    borderRadius: 12,
-  },
-  priorityBadge: {
-    fontSize: 11,
-    fontWeight: 700,
-    color: '#6366f1',
-    background: 'var(--primary-muted)',
-    padding: '2px 8px',
-    borderRadius: 10,
-  },
-  codeBlock: {
-    background: '#0c0c0e',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    padding: '14px 18px',
-    fontSize: 12,
-    lineHeight: 1.6,
-    color: '#c4b5fd',
-    fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-    overflow: 'auto',
-    whiteSpace: 'pre',
-    margin: 0,
-    marginTop: 8,
-  },
-  rawToggle: {
-    fontSize: 14,
-    color: 'var(--text-muted)',
-    cursor: 'pointer',
-  },
+  priorityBadge: { fontSize: 11, fontWeight: 700, color: '#6366f1', background: 'var(--primary-muted)', padding: '2px 8px', borderRadius: 10 },
+  codeBlock: { background: '#0c0c0e', border: '1px solid var(--border)', borderRadius: 8, padding: '14px 18px', fontSize: 12, lineHeight: 1.6, color: '#c4b5fd', fontFamily: "'JetBrains Mono', 'Fira Code', monospace", overflow: 'auto', whiteSpace: 'pre', margin: 0, marginTop: 8 },
+  rawToggle: { fontSize: 14, color: 'var(--text-muted)', cursor: 'pointer' },
 };

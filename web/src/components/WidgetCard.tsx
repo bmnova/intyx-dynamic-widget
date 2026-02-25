@@ -1,4 +1,11 @@
-export default function WidgetCard({ icon, title, description, tag }) {
+interface WidgetCardProps {
+  icon: string;
+  title: string;
+  description: string;
+  tag?: string;
+}
+
+export default function WidgetCard({ icon, title, description, tag }: WidgetCardProps) {
   return (
     <article aria-label={title} style={styles.card}>
       <div aria-hidden="true" style={styles.iconWrap}>
@@ -11,7 +18,7 @@ export default function WidgetCard({ icon, title, description, tag }) {
   );
 }
 
-const styles = {
+const styles: Record<string, React.CSSProperties> = {
   card: {
     background: 'var(--bg-card)',
     border: '1px solid var(--border)',

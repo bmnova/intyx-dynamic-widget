@@ -251,6 +251,133 @@ _TOOLS: list[dict[str, Any]] = [
         },
         "agent_visible": True,
     },
+    # ── Air Quality ──────────────────────────────────────────────────────
+    {
+        "name": "get_air_quality_by_city",
+        "description": "Get current air quality index (AQI) and pollutant levels for a city",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "city": {"type": "string", "description": "City name (e.g. Istanbul, London, Beijing)"},
+            },
+            "required": ["city"],
+        },
+        "agent_visible": True,
+    },
+    {
+        "name": "get_air_quality_by_coords",
+        "description": "Get current AQI for geographic coordinates",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "lat": {"type": "number", "description": "Latitude"},
+                "lon": {"type": "number", "description": "Longitude"},
+            },
+            "required": ["lat", "lon"],
+        },
+        "agent_visible": False,
+    },
+    # ── Earthquake ───────────────────────────────────────────────────────
+    {
+        "name": "get_recent_earthquakes",
+        "description": "Get recent earthquakes worldwide above a minimum magnitude (USGS data)",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "min_magnitude": {"type": "number", "description": "Minimum Richter magnitude (default 3.0)"},
+                "hours_back": {"type": "integer", "description": "Hours to look back (default 24)"},
+                "limit": {"type": "integer", "description": "Max results (default 10, max 100)"},
+            },
+        },
+        "agent_visible": True,
+    },
+    {
+        "name": "get_earthquakes_by_area",
+        "description": "Get recent earthquakes near a specific location (lat/lon radius)",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "lat": {"type": "number", "description": "Center latitude"},
+                "lon": {"type": "number", "description": "Center longitude"},
+                "radius_km": {"type": "number", "description": "Search radius in km (default 500)"},
+                "min_magnitude": {"type": "number", "description": "Minimum magnitude (default 2.0)"},
+                "hours_back": {"type": "integer", "description": "Hours to look back (default 72)"},
+                "limit": {"type": "integer", "description": "Max results (default 10)"},
+            },
+            "required": ["lat", "lon"],
+        },
+        "agent_visible": True,
+    },
+    # ── Exchange Rates ───────────────────────────────────────────────────
+    {
+        "name": "get_exchange_rates",
+        "description": "Get latest foreign exchange rates for a base currency (ECB data via Frankfurter)",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "base": {"type": "string", "description": "Base currency code (e.g. USD, EUR, TRY) — default USD"},
+                "targets": {
+                    "type": "string",
+                    "description": "Comma-separated target currencies (e.g. 'EUR,TRY,GBP'). Leave empty for all.",
+                },
+            },
+        },
+        "agent_visible": True,
+    },
+    {
+        "name": "convert_currency",
+        "description": "Convert an amount between two currencies",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "amount": {"type": "number", "description": "Amount to convert"},
+                "from_currency": {"type": "string", "description": "Source currency code (e.g. USD)"},
+                "to_currency": {"type": "string", "description": "Target currency code (e.g. TRY)"},
+            },
+            "required": ["amount", "from_currency", "to_currency"],
+        },
+        "agent_visible": True,
+    },
+    # ── Prayer Times ─────────────────────────────────────────────────────
+    {
+        "name": "get_prayer_times",
+        "description": "Get Islamic prayer times for a city (Fajr, Sunrise, Dhuhr, Asr, Maghrib, Isha)",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "city": {"type": "string", "description": "City name (e.g. Istanbul, Ankara)"},
+                "country": {"type": "string", "description": "Country code (default TR)"},
+                "method": {
+                    "type": "string",
+                    "description": "Calculation method: diyanet, isna, mwl, makkah, karachi, egypt, gulf, kuwait, qatar, singapore, france, tehran (default diyanet)",
+                },
+                "date": {"type": "string", "description": "Date in DD-MM-YYYY format (default today)"},
+            },
+            "required": ["city"],
+        },
+        "agent_visible": True,
+    },
+    {
+        "name": "get_prayer_times_by_coords",
+        "description": "Get Islamic prayer times for geographic coordinates",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "lat": {"type": "number", "description": "Latitude"},
+                "lon": {"type": "number", "description": "Longitude"},
+                "method": {"type": "string", "description": "Calculation method (default diyanet)"},
+                "date": {"type": "string", "description": "Date in DD-MM-YYYY format (default today)"},
+            },
+            "required": ["lat", "lon"],
+        },
+        "agent_visible": False,
+    },
+    {
+        "name": "get_prayer_methods",
+        "description": "List all available Islamic prayer time calculation methods",
+        "schema": {"type": "object", "properties": {}},
+        "agent_visible": False,
+    },
     # ── Gemini agent (natural language) ──────────────────────────────────
     {
         "name": "ask",

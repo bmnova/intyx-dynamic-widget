@@ -3,8 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL, PADDLE_CONFIG } from '../config';
 import Toast from '../components/Toast';
 import * as paddle from '../lib/paddle';
+import type { Plan } from '../types';
 
-const PLANS = [
+interface PricingPlan {
+  id: Plan | 'enterprise';
+  name: string;
+  price: number;
+  period: string;
+  description: string;
+  features: string[];
+  cta: string;
+  popular: boolean;
+}
+
+const PLANS: PricingPlan[] = [
   {
     id: 'starter',
     name: 'Starter',
@@ -57,48 +69,56 @@ const PLANS = [
   },
 ];
 
-const hasPaddle = PADDLE_CONFIG.publishableToken && Object.keys(PADDLE_CONFIG.priceIds).length > 0;
+interface ToastState {
+  type: 'error' | 'success' | 'info';
+  message: string;
+}
+
+const hasPaddle =
+  PADDLE_CONFIG.publishableToken && Object.keys(PADDLE_CONFIG.priceIds).length > 0;
 
 export default function Pricing() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(null);
-  const [toast, setToast] = useState(null);
+  const [loading, setLoading] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastState | null>(null);
   const [paddleReady, setPaddleReady] = useState(false);
 
   useEffect(() => {
     if (!hasPaddle) return;
     paddle.setPaddleConfig(PADDLE_CONFIG);
-    paddle.loadPaddleScript().then(() => paddle.initPaddle()).then(() => setPaddleReady(true)).catch(console.warn);
+    paddle
+      .loadPaddleScript()
+      .then(() => paddle.initPaddle())
+      .then(() => setPaddleReady(true))
+      .catch(console.warn);
   }, []);
 
-  const createLicenseAndRedirect = async (planId, email = '') => {
+  const createLicenseAndRedirect = async (planId: string, email = '') => {
     const res = await fetch(`${API_BASE_URL}/api/licenses`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ plan: planId, email: email || undefined }),
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
+      const err: { error?: string } = await res.json().catch(() => ({}));
       throw new Error(err.error || 'Could not create license');
     }
-    const data = await res.json();
+    const data: { api_key: string } = await res.json();
     localStorage.setItem('intyx_api_key', data.api_key);
     localStorage.setItem('intyx_plan', planId);
     localStorage.setItem('intyx_purchased_at', new Date().toISOString());
     navigate('/dashboard');
   };
 
-  const handlePurchase = async (planId) => {
+  const handlePurchase = async (planId: string) => {
     setLoading(planId);
 
     try {
-      // Free plan: create license directly
       if (planId === 'starter') {
         await createLicenseAndRedirect(planId);
         return;
       }
 
-      // Paid plans: open Paddle checkout (web only)
       if (hasPaddle && paddleReady) {
         const result = await paddle.openCheckout({
           planKey: planId,
@@ -106,7 +126,8 @@ export default function Pricing() {
         });
 
         if (result.status === 'completed') {
-          const email = result.data?.customer?.email || result.data?.customer_email || '';
+          const data = result.data as { customer?: { email?: string }; customer_email?: string } | undefined;
+          const email = data?.customer?.email || data?.customer_email || '';
           await createLicenseAndRedirect(planId, email);
         } else {
           setToast({ type: 'info', message: 'Checkout was closed. You can try again when ready.' });
@@ -114,11 +135,10 @@ export default function Pricing() {
         return;
       }
 
-      // Fallback when Paddle not configured: simulate (demo)
       await createLicenseAndRedirect(planId);
     } catch (err) {
       console.error('Purchase failed:', err);
-      setToast({ type: 'error', message: err.message || 'Something went wrong. Please try again.' });
+      setToast({ type: 'error', message: (err as Error).message || 'Something went wrong. Please try again.' });
     } finally {
       setLoading(null);
     }
@@ -184,8 +204,8 @@ export default function Pricing() {
         <span aria-hidden="true" style={{ fontSize: 18 }}>💳</span>
         <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>
           {hasPaddle
-            ? <>We use <strong style={{ color: 'var(--text)' }}>Paddle</strong> for secure payments. Pro & Enterprise open the Paddle checkout.</>
-            : <>Payments via <strong style={{ color: 'var(--text)' }}>Paddle</strong>. Set <code>VITE_PADDLE_PUBLISHABLE_TOKEN</code> and <code>VITE_PADDLE_PRICE_IDS</code> for live checkout.</>}
+            ? <><strong style={{ color: 'var(--text)' }}>Paddle</strong> ile güvenli ödeme.</>
+            : <>Ödemeler <strong style={{ color: 'var(--text)' }}>Paddle</strong> üzerinden. <code>VITE_PADDLE_PUBLISHABLE_TOKEN</code> ve <code>VITE_PADDLE_PRICE_IDS</code> ayarlayın.</>}
         </p>
       </div>
 
@@ -202,7 +222,7 @@ export default function Pricing() {
   );
 }
 
-const styles = {
+const styles: Record<string, React.CSSProperties> = {
   hero: {
     textAlign: 'center',
     paddingTop: 60,

@@ -7,6 +7,8 @@ import Dashboard from './pages/Dashboard';
 import AgentTasks from './pages/AgentTasks';
 import WidgetStudio from './pages/WidgetStudio';
 import Admin from './pages/Admin';
+import Analytics from './pages/Analytics';
+import Integrations from './pages/Integrations';
 import NotFound from './pages/NotFound';
 
 export default function App() {
@@ -40,6 +42,15 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <Analytics />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/integrations" element={<Integrations />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
