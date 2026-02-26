@@ -135,7 +135,8 @@ export default function Pricing() {
         return;
       }
 
-      await createLicenseAndRedirect(planId);
+      // Paddle is not configured — block paid plans to prevent free license creation
+      throw new Error('Payment system is not configured. Please contact support.');
     } catch (err) {
       console.error('Purchase failed:', err);
       setToast({ type: 'error', message: (err as Error).message || 'Something went wrong. Please try again.' });
