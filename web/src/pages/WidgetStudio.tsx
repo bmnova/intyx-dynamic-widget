@@ -366,6 +366,27 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
       </div>
     );
   }
+  if (type === 'informational') {
+    const severityColors: Record<string, { bg: string; fg: string; icon: string }> = {
+      warning: { bg: 'rgba(251,146,60,0.1)', fg: '#f97316', icon: '⚠️' },
+      error:   { bg: 'rgba(239,68,68,0.1)',  fg: '#ef4444', icon: '🔴' },
+      success: { bg: 'rgba(34,197,94,0.1)',  fg: '#22c55e', icon: '✅' },
+      info:    { bg: 'rgba(99,130,241,0.1)', fg: '#818cf8', icon: 'ℹ️' },
+    };
+    const sev = String(params.severity ?? 'info');
+    const s = severityColors[sev] ?? severityColors.info;
+    return (
+      <div style={{ ...box, background: s.bg, border: `1px solid ${s.fg}33` }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <span style={{ fontSize: 20, lineHeight: 1 }}>{s.icon}</span>
+          <div>
+            {params.title && <div style={{ fontSize: 15, fontWeight: 600, color: s.fg }}>{String(params.title)}</div>}
+            {params.message && <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{String(params.message)}</div>}
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (type === 'rating') {
     return (
       <div style={{ ...box, textAlign: 'center' }}>
