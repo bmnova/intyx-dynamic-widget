@@ -1,3 +1,9 @@
+## 0.1.2
+
+- **Full JSON response rendering**: All fields from widget JSON response (title, subtitle, body, cta, image, url, alias, text) are now displayed in widget previews.
+- **Text & alias field support**: Widget types now properly render `text` and `alias` fields across all card types.
+- **Improved JSON field mapping**: `DynamicWidgetContainer` and UI cards use complete field extraction from backend responses.
+
 ## 0.1.1
 
 - **Offline cache**: Last widget response is cached locally via `shared_preferences`; shown on next launch while the network response is pending.
