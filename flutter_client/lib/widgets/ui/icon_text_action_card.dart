@@ -25,7 +25,7 @@ class IconTextActionCard extends StatelessWidget {
     return IconTextActionCard(
       iconName: params['icon'] as String? ?? 'info',
       title: params['title'] as String? ?? '',
-      description: params['description'] as String?,
+      description: (params['description'] ?? params['text']) as String?,
       actionText: params['action_text'] as String?,
       actionUrl: params['action_url'] as String?,
       onAction: onAction,

@@ -25,7 +25,7 @@ class TitleSubtitleImageCard extends StatelessWidget {
         params['action_url'] as String? ?? params['link_url'] as String?;
     return TitleSubtitleImageCard(
       title: params['title'] as String? ?? '',
-      subtitle: params['subtitle'] as String?,
+      subtitle: (params['subtitle'] ?? params['text']) as String?,
       imageUrl: params['image_url'] as String? ?? '',
       imageFit: _parseFit(params['image_fit']),
       onTap: actionUrl != null && onAction != null

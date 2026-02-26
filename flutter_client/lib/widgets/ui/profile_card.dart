@@ -7,6 +7,7 @@ class ProfileCard extends StatelessWidget {
   final String? avatarUrl;
   final String? title;
   final String? subtitle;
+  final String? text;
   final String? actionText;
   final String? actionUrl;
 
@@ -16,6 +17,7 @@ class ProfileCard extends StatelessWidget {
     this.avatarUrl,
     this.title,
     this.subtitle,
+    this.text,
     this.actionText,
     this.actionUrl,
   });
@@ -25,7 +27,8 @@ class ProfileCard extends StatelessWidget {
       name: params['name'] as String? ?? '',
       avatarUrl: params['avatar_url'] as String?,
       title: params['title'] as String?,
-      subtitle: params['subtitle'] as String?,
+      subtitle: (params['subtitle'] ?? params['text']) as String?,
+      text: params['subtitle'] != null ? params['text'] as String? : null,
       actionText: params['action_text'] as String?,
       actionUrl: params['action_url'] as String?,
     );
@@ -72,6 +75,13 @@ class ProfileCard extends StatelessWidget {
                   if (subtitle != null)
                     Text(
                       subtitle!,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.outline,
+                      ),
+                    ),
+                  if (text != null)
+                    Text(
+                      text!,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.outline,
                       ),

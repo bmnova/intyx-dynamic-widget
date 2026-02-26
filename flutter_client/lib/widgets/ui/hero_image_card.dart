@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 class HeroImageCard extends StatelessWidget {
   final String title;
+  final String? text;
   final String imageUrl;
   final String? buttonText;
   final String? buttonAction;
@@ -11,6 +12,7 @@ class HeroImageCard extends StatelessWidget {
   const HeroImageCard({
     super.key,
     required this.title,
+    this.text,
     required this.imageUrl,
     this.buttonText,
     this.buttonAction,
@@ -23,6 +25,7 @@ class HeroImageCard extends StatelessWidget {
   }) {
     return HeroImageCard(
       title: params['title'] as String? ?? '',
+      text: params['text'] as String?,
       imageUrl: params['image_url'] as String? ?? '',
       buttonText: params['button_text'] as String?,
       buttonAction: params['button_action'] as String?,
@@ -82,6 +85,15 @@ class HeroImageCard extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                if (text != null && text!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    text!,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ],
                 if (buttonText != null && buttonText!.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   FilledButton(

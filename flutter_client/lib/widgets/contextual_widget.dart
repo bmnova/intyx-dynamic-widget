@@ -23,7 +23,7 @@ class ContextualWidget extends StatelessWidget {
     final actionUrl = params['action_url'] as String?;
     return ContextualWidget(
       title: params['title'] as String? ?? '',
-      content: params['content'] as String? ?? '',
+      content: ((params['content'] ?? params['text']) as String?) ?? '',
       icon: params['icon'] as String?,
       source: params['source'] as String?,
       onTap: actionUrl != null && onAction != null

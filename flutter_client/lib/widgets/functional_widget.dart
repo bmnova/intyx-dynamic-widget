@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 class FunctionalWidget extends StatelessWidget {
   final String title;
+  final String? text;
   final List<FunctionalAction> actions;
   final void Function(String action)? onAction;
 
   const FunctionalWidget({
     super.key,
     required this.title,
+    this.text,
     required this.actions,
     this.onAction,
   });
@@ -19,6 +21,7 @@ class FunctionalWidget extends StatelessWidget {
     final rawActions = params['actions'] as List<dynamic>? ?? [];
     return FunctionalWidget(
       title: params['title'] as String? ?? '',
+      text: params['text'] as String?,
       actions: rawActions
           .map((e) => FunctionalAction.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -37,6 +40,15 @@ class FunctionalWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(title, style: theme.textTheme.titleMedium),
+            if (text != null && text!.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                text!,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             Wrap(
               spacing: 8,
@@ -82,7 +94,7 @@ class FunctionalAction {
   factory FunctionalAction.fromJson(Map<String, dynamic> json) {
     return FunctionalAction(
       label: json['label'] as String? ?? '',
-      action: json['action'] as String? ?? '',
+      action: (json['action'] ?? json['url'] ?? '') as String,
       style: json['style'] as String? ?? 'primary',
     );
   }

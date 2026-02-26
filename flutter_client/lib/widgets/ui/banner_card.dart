@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Simple text banner — ozel gun kutlamasi, duyuru, motivasyon tarzinda.
 class BannerCard extends StatelessWidget {
+  final String? title;
   final String text;
   final String? emoji;
   final String? actionText;
@@ -11,6 +12,7 @@ class BannerCard extends StatelessWidget {
 
   const BannerCard({
     super.key,
+    this.title,
     required this.text,
     this.emoji,
     this.actionText,
@@ -24,6 +26,7 @@ class BannerCard extends StatelessWidget {
     void Function(String url)? onAction,
   }) {
     return BannerCard(
+      title: params['title'] as String?,
       text: params['text'] as String? ?? '',
       emoji: params['emoji'] as String?,
       actionText: params['action_text'] as String?,
@@ -71,27 +74,43 @@ class BannerCard extends StatelessWidget {
     return Container(
       decoration: decoration,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          if (emoji != null) ...[
-            Text(emoji!, style: const TextStyle(fontSize: 28)),
-            const SizedBox(width: 16),
-          ],
-          Expanded(
-            child: Text(
-              text,
+          if (title != null && title!.isNotEmpty) ...[
+            Text(
+              title!,
               style: theme.textTheme.titleSmall?.copyWith(
                 color: textColor,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
+            const SizedBox(height: 4),
+          ],
+          Row(
+            children: [
+              if (emoji != null) ...[
+                Text(emoji!, style: const TextStyle(fontSize: 28)),
+                const SizedBox(width: 16),
+              ],
+              Expanded(
+                child: Text(
+                  text,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: textColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              if (actionText != null)
+                TextButton(
+                  onPressed: actionUrl != null ? () => onAction?.call(actionUrl!) : null,
+                  style: TextButton.styleFrom(foregroundColor: textColor),
+                  child: Text(actionText!),
+                ),
+            ],
           ),
-          if (actionText != null)
-            TextButton(
-              onPressed: actionUrl != null ? () => onAction?.call(actionUrl!) : null,
-              style: TextButton.styleFrom(foregroundColor: textColor),
-              child: Text(actionText!),
-            ),
         ],
       ),
     );
