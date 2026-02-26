@@ -17,12 +17,16 @@ class HeroImageCard extends StatelessWidget {
     this.onAction,
   });
 
-  factory HeroImageCard.fromJson(Map<String, dynamic> params) {
+  factory HeroImageCard.fromJson(
+    Map<String, dynamic> params, {
+    void Function(String url)? onAction,
+  }) {
     return HeroImageCard(
       title: params['title'] as String? ?? '',
       imageUrl: params['image_url'] as String? ?? '',
       buttonText: params['button_text'] as String?,
       buttonAction: params['button_action'] as String?,
+      onAction: onAction,
     );
   }
 

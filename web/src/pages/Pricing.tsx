@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL, PADDLE_CONFIG } from '../config';
 import Toast from '../components/Toast';
 import * as paddle from '../lib/paddle';
+import type { PaddleProduct } from '../lib/paddle';
 import type { Plan } from '../types';
 
 interface PricingPlan {
@@ -82,6 +83,7 @@ export default function Pricing() {
   const [loading, setLoading] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [paddleReady, setPaddleReady] = useState(false);
+  const [paddleProducts, setPaddleProducts] = useState<Record<string, PaddleProduct>>({});
 
   useEffect(() => {
     if (!hasPaddle) return;
@@ -89,7 +91,15 @@ export default function Pricing() {
     paddle
       .loadPaddleScript()
       .then(() => paddle.initPaddle())
-      .then(() => setPaddleReady(true))
+      .then(() => {
+        setPaddleReady(true);
+        return paddle.fetchProducts();
+      })
+      .then((products) => {
+        const map: Record<string, PaddleProduct> = {};
+        products.forEach((p) => { map[p.key] = p; });
+        setPaddleProducts(map);
+      })
       .catch(console.warn);
   }, []);
 
@@ -156,7 +166,15 @@ export default function Pricing() {
 
       <section aria-label="Pricing plans">
         <div style={styles.grid}>
-          {PLANS.map((plan) => (
+          {PLANS.map((plan) => {
+            const paddlePlan = paddleProducts[plan.id];
+            const displayPrice = paddlePlan
+              ? (paddlePlan.priceString ?? `$${paddlePlan.price}`)
+              : (plan.price === 0 ? 'Free' : `$${plan.price}`);
+            const displayPeriod = paddlePlan
+              ? `/${paddlePlan.billing_interval}`
+              : plan.period;
+            return (
             <article
               key={plan.id}
               aria-label={`${plan.name} plan`}
@@ -169,11 +187,9 @@ export default function Pricing() {
               <h2 style={styles.planName}>{plan.name}</h2>
               <p style={styles.planDesc}>{plan.description}</p>
               <div style={styles.priceRow}>
-                <span style={styles.price}>
-                  {plan.price === 0 ? 'Free' : `$${plan.price}`}
-                </span>
+                <span style={styles.price}>{displayPrice}</span>
                 {plan.price > 0 && (
-                  <span style={styles.period}>{plan.period}</span>
+                  <span style={styles.period}>{displayPeriod}</span>
                 )}
               </div>
               <button
@@ -197,7 +213,8 @@ export default function Pricing() {
                 ))}
               </ul>
             </article>
-          ))}
+            );
+          })}
         </div>
       </section>
 

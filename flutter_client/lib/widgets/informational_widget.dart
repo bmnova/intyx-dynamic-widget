@@ -14,11 +14,18 @@ class InformationalWidget extends StatelessWidget {
     this.onTap,
   });
 
-  factory InformationalWidget.fromJson(Map<String, dynamic> params) {
+  factory InformationalWidget.fromJson(
+    Map<String, dynamic> params, {
+    void Function(String url)? onAction,
+  }) {
+    final actionUrl = params['action_url'] as String?;
     return InformationalWidget(
       title: params['title'] as String? ?? '',
       message: params['message'] as String? ?? '',
       severity: params['severity'] as String? ?? 'info',
+      onTap: actionUrl != null && onAction != null
+          ? () => onAction(actionUrl)
+          : null,
     );
   }
 

@@ -12,13 +12,17 @@ class FunctionalWidget extends StatelessWidget {
     this.onAction,
   });
 
-  factory FunctionalWidget.fromJson(Map<String, dynamic> params) {
+  factory FunctionalWidget.fromJson(
+    Map<String, dynamic> params, {
+    void Function(String url)? onAction,
+  }) {
     final rawActions = params['actions'] as List<dynamic>? ?? [];
     return FunctionalWidget(
       title: params['title'] as String? ?? '',
       actions: rawActions
           .map((e) => FunctionalAction.fromJson(e as Map<String, dynamic>))
           .toList(),
+      onAction: onAction,
     );
   }
 
