@@ -393,8 +393,11 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
   if (type === 'banner') {
     return (
       <div style={{ ...box, textAlign: 'center', fontSize: 15 }}>
-        {params.emoji && <span style={{ marginRight: 8, fontSize: 20 }}>{String(params.emoji)}</span>}
-        {String(params.text ?? '')}
+        {params.title && <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{String(params.title)}</div>}
+        <div>
+          {params.emoji && <span style={{ marginRight: 8, fontSize: 20 }}>{String(params.emoji)}</span>}
+          {String(params.text ?? '')}
+        </div>
         {params.action_text && (
           <div style={{ marginTop: 10 }}>
             <span style={{ fontSize: 13, color: accentColor, fontWeight: 600 }}>{String(params.action_text)} →</span>
@@ -417,6 +420,7 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
         justifyContent: 'flex-end',
       }}>
         <div style={{ fontSize: 18, fontWeight: 700 }}>{String(params.title ?? '')}</div>
+        {params.text && <div style={{ fontSize: 13, marginTop: 4, opacity: 0.85 }}>{String(params.text)}</div>}
         {params.button_text && (
           <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ fontSize: 13, color: accentColor, fontWeight: 600 }}>{String(params.button_text)} →</span>
@@ -448,7 +452,10 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
         )}
         {params.badge_text && <span style={previewBadgeStyle}>{String(params.badge_text)}</span>}
         <div style={{ fontSize: 16, fontWeight: 700, marginTop: 8 }}>{String(params.title ?? '')}</div>
-        <div style={{ fontSize: 13, color: mutedColor, marginTop: 4 }}>{String(params.description ?? '')}</div>
+        <div style={{ fontSize: 13, color: mutedColor, marginTop: 4 }}>{String(params.description ?? params.text ?? '')}</div>
+        {params.text && params.description && params.text !== params.description && (
+          <div style={{ fontSize: 13, color: mutedColor, marginTop: 4 }}>{String(params.text)}</div>
+        )}
         {params.action_url && (
           <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
             <span style={{ fontSize: 12, color: accentColor }}>🔗</span>
@@ -465,6 +472,7 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
     return (
       <div style={{ ...box, textAlign: 'center' }}>
         <div style={{ fontSize: 15, fontWeight: 600 }}>{String(params.title ?? '')}</div>
+        {params.text && <div style={{ fontSize: 13, color: mutedColor, marginTop: 4 }}>{String(params.text)}</div>}
         {params.end_time && (
           <div style={{ fontSize: 11, color: mutedColor, marginTop: 2 }}>
             ends {new Date(String(params.end_time)).toLocaleString()}
@@ -502,7 +510,14 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
           <span style={{ fontSize: 20, lineHeight: 1 }}>{s.icon}</span>
           <div>
             {params.title && <div style={{ fontSize: 15, fontWeight: 600, color: s.fg }}>{String(params.title)}</div>}
-            {params.message && <div style={{ fontSize: 13, color: mutedColor, marginTop: 4 }}>{String(params.message)}</div>}
+            {(params.message ?? params.text) && (
+              <div style={{ fontSize: 13, color: mutedColor, marginTop: 4 }}>
+                {String(params.message ?? params.text)}
+              </div>
+            )}
+            {params.text && params.message && params.text !== params.message && (
+              <div style={{ fontSize: 13, color: mutedColor, marginTop: 2 }}>{String(params.text)}</div>
+            )}
           </div>
         </div>
       </div>
@@ -516,7 +531,9 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
         <div style={{ fontSize: 28, margin: '8px 0', letterSpacing: 4, color: palette.secondary ?? '#f59e0b' }}>
           {'★'.repeat(Number(params.max_stars) || 5)}
         </div>
-        {params.subtitle && <div style={{ fontSize: 12, color: mutedColor }}>{String(params.subtitle)}</div>}
+        {(params.subtitle ?? params.text) && (
+          <div style={{ fontSize: 12, color: mutedColor }}>{String(params.subtitle ?? params.text)}</div>
+        )}
       </div>
     );
   }
@@ -525,7 +542,8 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
     const options = Array.isArray(params.options) ? params.options : [];
     return (
       <div style={box}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10 }}>{String(params.question ?? '')}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{String(params.question ?? params.title ?? '')}</div>
+        {params.text && <div style={{ fontSize: 12, color: mutedColor, marginBottom: 10 }}>{String(params.text)}</div>}
         {options.map((opt, i) => (
           <div key={i} style={{ padding: '8px 12px', marginBottom: 6, border: `1px solid ${accentColor}33`, borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>
             {typeof opt === 'string' ? opt : (opt as { label?: string; text?: string }).label ?? (opt as { label?: string; text?: string }).text ?? JSON.stringify(opt)}
@@ -540,7 +558,9 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
     return (
       <div style={box}>
         <div style={{ fontSize: 14, fontWeight: 600 }}>{String(params.title ?? '')}</div>
-        {params.subtitle && <div style={{ fontSize: 12, color: mutedColor, marginTop: 2 }}>{String(params.subtitle)}</div>}
+        {(params.subtitle ?? params.text) && (
+          <div style={{ fontSize: 12, color: mutedColor, marginTop: 2 }}>{String(params.subtitle ?? params.text)}</div>
+        )}
         <div style={{ height: 8, borderRadius: 4, background: '#27272a', marginTop: 10, overflow: 'hidden' }}>
           <div style={{ height: '100%', width: `${pct}%`, background: accentColor, borderRadius: 4 }} />
         </div>
@@ -574,7 +594,7 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
           <div style={{ fontSize: 28, lineHeight: 1, flexShrink: 0 }}>{ctxIcon}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 600 }}>{String(params.title ?? '')}</div>
-            <div style={{ fontSize: 13, color: mutedColor, marginTop: 4 }}>{String(params.content ?? '')}</div>
+            <div style={{ fontSize: 13, color: mutedColor, marginTop: 4 }}>{String(params.content ?? params.text ?? '')}</div>
             {params.source && (
               <div style={{ fontSize: 11, color: `${mutedColor}99`, marginTop: 6 }}>
                 via {String(params.source)}
@@ -590,7 +610,8 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
     const fnActions = Array.isArray(params.actions) ? params.actions : [];
     return (
       <div style={box}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>{String(params.title ?? '')}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: params.text ? 4 : 12 }}>{String(params.title ?? '')}</div>
+        {params.text && <div style={{ fontSize: 13, color: mutedColor, marginBottom: 12 }}>{String(params.text)}</div>}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {(fnActions.length > 0 ? fnActions : [{ label: 'Action', style: 'primary' }]).map((a, i) => {
             const act = typeof a === 'string' ? { label: a, style: 'primary' } : a as { label?: string; style?: string; action?: string; url?: string };
@@ -627,7 +648,10 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
     return (
       <div style={box}>
         {params.title && carouselItems.length > 0 && (
-          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10 }}>{String(params.title)}</div>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: params.text ? 4 : 10 }}>{String(params.title)}</div>
+        )}
+        {params.text && carouselItems.length > 0 && (
+          <div style={{ fontSize: 12, color: mutedColor, marginBottom: 10 }}>{String(params.text)}</div>
         )}
         <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
           {displayItems.map((item, i) => {
@@ -669,7 +693,12 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
         }
         <div style={{ padding: 14 }}>
           <div style={{ fontSize: 15, fontWeight: 600 }}>{String(params.title ?? '')}</div>
-          {params.subtitle && <div style={{ fontSize: 13, color: mutedColor, marginTop: 4 }}>{String(params.subtitle)}</div>}
+          {(params.subtitle ?? params.text) && (
+            <div style={{ fontSize: 13, color: mutedColor, marginTop: 4 }}>{String(params.subtitle ?? params.text)}</div>
+          )}
+          {params.text && params.subtitle && params.text !== params.subtitle && (
+            <div style={{ fontSize: 13, color: mutedColor, marginTop: 2 }}>{String(params.text)}</div>
+          )}
         </div>
       </div>
     );
@@ -681,6 +710,7 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
       <div style={{ ...box, padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: '14px 14px 10px' }}>
           <div style={{ fontSize: 15, fontWeight: 600 }}>{String(params.title ?? '')}</div>
+          {params.text && <div style={{ fontSize: 13, color: mutedColor, marginTop: 4 }}>{String(params.text)}</div>}
         </div>
         {params.image_url
           ? <div style={{ height: 80, backgroundImage: `url(${String(params.image_url)})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
@@ -714,7 +744,9 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 600 }}>{String(params.title ?? '')}</div>
-            {params.description && <div style={{ fontSize: 12, color: mutedColor, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{String(params.description)}</div>}
+            {(params.description ?? params.text) && (
+              <div style={{ fontSize: 12, color: mutedColor, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{String(params.description ?? params.text)}</div>
+            )}
             {params.action_url && !params.action_text && (
               <div style={{ fontSize: 10, color: accentColor, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={String(params.action_url)}>
                 {String(params.action_url)}
@@ -758,6 +790,9 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
             "{String(testimonialText)}"
           </div>
         )}
+        {params.text && !testimonialText && (
+          <div style={{ fontSize: 13, color: mutedColor, marginBottom: 8 }}>{String(params.text)}</div>
+        )}
         {authorName && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {avatarUrl
@@ -789,6 +824,7 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
         <div style={{ fontSize: 16, fontWeight: 700 }}>{String(params.name ?? '')}</div>
         {params.title && <div style={{ fontSize: 13, color: accentColor, marginTop: 2 }}>{String(params.title)}</div>}
         {params.subtitle && <div style={{ fontSize: 12, color: mutedColor, marginTop: 4 }}>{String(params.subtitle)}</div>}
+        {params.text && <div style={{ fontSize: 12, color: mutedColor, marginTop: 4 }}>{String(params.text)}</div>}
         {(params.action_text || params.action_url) && (
           <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
             {params.action_text && (
