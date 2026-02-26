@@ -57,6 +57,7 @@ let lastCheckoutStatus: 'completed' | 'closed' | null = null;
 let lastCheckoutEventData: unknown = null;
 let checkoutResolve: ((value: CheckoutResult) => void) | null = null;
 let checkoutReject: ((err: Error) => void) | null = null;
+let paddleInitialized = false;
 
 function storeEventResult(eventData: PaddleEvent): void {
   // Log all events for debugging
@@ -113,8 +114,16 @@ function getPaddleConfig(): PaddleConfig | null {
 export function loadPaddleScript(): Promise<void> {
   if (typeof window === 'undefined') return Promise.resolve();
   if (window.Paddle) return Promise.resolve();
-  const existing = document.getElementById('paddle-cdn-script');
-  if (existing) return Promise.resolve();
+
+  const existing = document.getElementById('paddle-cdn-script') as HTMLScriptElement | null;
+  if (existing) {
+    // Script tag exists (e.g. from index.html) but may still be loading — wait for it
+    return new Promise((resolve, reject) => {
+      if (window.Paddle) { resolve(); return; }
+      existing.addEventListener('load', () => resolve(), { once: true });
+      existing.addEventListener('error', () => reject(new Error('Paddle CDN script failed to load')), { once: true });
+    });
+  }
 
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
@@ -128,6 +137,9 @@ export function loadPaddleScript(): Promise<void> {
 }
 
 export async function initPaddle(): Promise<void> {
+  // Paddle.Initialize() can only be called once per page — guard against double calls
+  if (paddleInitialized) return;
+
   const cfg = getPaddleConfig();
   if (!cfg || !cfg.publishableToken) {
     console.warn('[Paddle] init: config not available');
@@ -136,8 +148,15 @@ export async function initPaddle(): Promise<void> {
   if (!window.Paddle) {
     await loadPaddleScript();
   }
+  // Re-check after await in case another call already initialized
+  if (paddleInitialized) return;
+  paddleInitialized = true;
+
   const env = (cfg.env || 'sandbox').toLowerCase();
-  window.Paddle!.Environment.set(env);
+  // Environment.set() is only for sandbox — omit for production per Paddle docs
+  if (env !== 'production') {
+    window.Paddle!.Environment.set(env);
+  }
   window.Paddle!.Initialize({
     token: cfg.publishableToken,
     eventCallback: storeEventResult,
