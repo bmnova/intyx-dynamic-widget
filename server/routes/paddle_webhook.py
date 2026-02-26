@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 paddle_bp = Blueprint("paddle", __name__, url_prefix="/api/paddle")
 
 PLAN_MAP = {
-    # Map Paddle price IDs to plan names — configure in env or hardcode
-    # These are placeholders; replace with real Paddle price IDs
+    # Sandbox price IDs → plan names
+    "pri_01kjcjsbqvqbns6q2p04maddea": "pro",
 }
 
 # Map Paddle product IDs to plan names (fallback when price ID not in PLAN_MAP)

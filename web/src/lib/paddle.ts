@@ -56,15 +56,39 @@ let isCompletedOrClosed = false;
 let lastCheckoutStatus: 'completed' | 'closed' | null = null;
 let lastCheckoutEventData: unknown = null;
 let checkoutResolve: ((value: CheckoutResult) => void) | null = null;
+let checkoutReject: ((err: Error) => void) | null = null;
 
 function storeEventResult(eventData: PaddleEvent): void {
-  if (eventData.name === 'checkout.completed' || eventData.name === 'checkout.closed') {
+  // Log all events for debugging
+  console.info('[Paddle] event:', eventData.name, eventData.data);
+
+  if (eventData.name === 'checkout.completed') {
     isCompletedOrClosed = true;
-    lastCheckoutStatus = eventData.name === 'checkout.completed' ? 'completed' : 'closed';
+    lastCheckoutStatus = 'completed';
     lastCheckoutEventData = eventData.data ?? null;
     if (checkoutResolve) {
-      checkoutResolve({ status: lastCheckoutStatus, data: lastCheckoutEventData });
+      checkoutResolve({ status: 'completed', data: lastCheckoutEventData });
       checkoutResolve = null;
+      checkoutReject = null;
+    }
+  } else if (eventData.name === 'checkout.closed') {
+    isCompletedOrClosed = true;
+    lastCheckoutStatus = 'closed';
+    lastCheckoutEventData = eventData.data ?? null;
+    if (checkoutResolve) {
+      checkoutResolve({ status: 'closed', data: lastCheckoutEventData });
+      checkoutResolve = null;
+      checkoutReject = null;
+    }
+  } else if (eventData.name === 'checkout.error') {
+    console.error('[Paddle] checkout.error event:', eventData.data);
+    if (checkoutReject) {
+      const errMsg =
+        (eventData.data as { message?: string })?.message ||
+        'Paddle checkout error';
+      checkoutReject(new Error(`Paddle: ${errMsg}`));
+      checkoutResolve = null;
+      checkoutReject = null;
     }
   }
 }
@@ -135,16 +159,22 @@ export async function openCheckout({
   lastCheckoutEventData = null;
 
   const cfg = getPaddleConfig();
-  if (!cfg?.priceIds) throw new Error('Missing Paddle price IDs in config');
+  if (!cfg?.priceIds) throw new Error('Paddle price IDs are missing from config');
   const priceId =
     cfg.priceIds[planKey] || cfg.priceIds.monthly || Object.values(cfg.priceIds)[0];
+  if (!priceId) {
+    throw new Error(`No Paddle price ID found for plan: ${planKey}`);
+  }
   const items = [{ priceId, quantity: 1 }];
   const customer = email ? { email } : undefined;
 
   if (!window.Paddle) await initPaddle();
 
-  return new Promise((resolve) => {
+  console.info('[Paddle] Opening checkout — env:', cfg.env, 'priceId:', priceId);
+
+  return new Promise((resolve, reject) => {
     checkoutResolve = resolve;
+    checkoutReject = reject;
     try {
       window.Paddle!.Checkout.open({
         items,
@@ -152,9 +182,10 @@ export async function openCheckout({
         customData: { ...customData },
       });
     } catch (err) {
-      console.error('[Paddle] Checkout failed:', err);
+      console.error('[Paddle] Checkout.open threw:', err);
       checkoutResolve = null;
-      resolve({ status: 'closed' });
+      checkoutReject = null;
+      reject(err instanceof Error ? err : new Error(String(err)));
     }
   });
 }
