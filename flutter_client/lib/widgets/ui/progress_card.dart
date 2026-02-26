@@ -22,7 +22,7 @@ class ProgressCard extends StatelessWidget {
   factory ProgressCard.fromJson(Map<String, dynamic> params) {
     return ProgressCard(
       title: params['title'] as String? ?? '',
-      subtitle: params['subtitle'] as String?,
+      subtitle: (params['subtitle'] ?? params['text']) as String?,
       progress: (params['progress'] as num?)?.toDouble() ?? 0.0,
       progressLabel: params['progress_label'] as String?,
       actionText: params['action_text'] as String?,

@@ -18,7 +18,7 @@ class RatingCard extends StatefulWidget {
   factory RatingCard.fromJson(Map<String, dynamic> params) {
     return RatingCard(
       title: params['title'] as String? ?? '',
-      subtitle: params['subtitle'] as String?,
+      subtitle: (params['subtitle'] ?? params['text']) as String?,
       maxStars: params['max_stars'] as int? ?? 5,
     );
   }

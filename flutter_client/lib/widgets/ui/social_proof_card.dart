@@ -28,8 +28,8 @@ class SocialProofCard extends StatelessWidget {
       metric: params['metric'] as String?,
       metricLabel: params['metric_label'] as String?,
       avatarUrl: params['avatar_url'] as String?,
-      quote: params['quote'] as String?,
-      author: params['author'] as String?,
+      quote: (params['quote'] ?? params['testimonial'] ?? params['text']) as String?,
+      author: (params['author'] ?? params['author_name']) as String?,
     );
   }
 

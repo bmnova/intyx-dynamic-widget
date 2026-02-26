@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 
 class CarouselCard extends StatefulWidget {
   final String? title;
+  final String? text;
   final List<CarouselItem> items;
   final void Function(String url)? onItemTap;
 
   const CarouselCard({
     super.key,
     this.title,
+    this.text,
     required this.items,
     this.onItemTap,
   });
@@ -17,6 +19,7 @@ class CarouselCard extends StatefulWidget {
     final rawItems = params['items'] as List<dynamic>? ?? [];
     return CarouselCard(
       title: params['title'] as String?,
+      text: params['text'] as String?,
       items: rawItems
           .map((e) => CarouselItem.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -55,8 +58,18 @@ class _CarouselCardState extends State<CarouselCard> {
         children: [
           if (widget.title != null && widget.title!.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              padding: EdgeInsets.fromLTRB(16, 16, 16, widget.text != null ? 4 : 8),
               child: Text(widget.title!, style: theme.textTheme.titleMedium),
+            ),
+          if (widget.text != null && widget.text!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                widget.text!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
             ),
           SizedBox(
             height: 200,
@@ -79,7 +92,7 @@ class _CarouselCardState extends State<CarouselCard> {
                         children: [
                           CachedNetworkImage(
                             imageUrl: item.imageUrl,
-                            fit: BoxFit.cover,
+                            fit: item.imageFit,
                             placeholder: (_, __) => Container(
                               color: theme.colorScheme.surfaceContainerHighest,
                             ),
@@ -161,12 +174,14 @@ class _CarouselCardState extends State<CarouselCard> {
 
 class CarouselItem {
   final String imageUrl;
+  final BoxFit imageFit;
   final String? title;
   final String? description;
   final String? linkUrl;
 
   const CarouselItem({
     required this.imageUrl,
+    this.imageFit = BoxFit.cover,
     this.title,
     this.description,
     this.linkUrl,
@@ -175,9 +190,21 @@ class CarouselItem {
   factory CarouselItem.fromJson(Map<String, dynamic> json) {
     return CarouselItem(
       imageUrl: json['image_url'] as String? ?? '',
+      imageFit: _parseFit(json['image_fit']),
       title: json['title'] as String?,
-      description: json['description'] as String?,
+      description: (json['description'] ?? json['text']) as String?,
       linkUrl: json['link_url'] as String?,
     );
+  }
+
+  static BoxFit _parseFit(dynamic value) {
+    switch (value) {
+      case 'contain':
+        return BoxFit.contain;
+      case 'fill':
+        return BoxFit.fill;
+      default:
+        return BoxFit.cover;
+    }
   }
 }

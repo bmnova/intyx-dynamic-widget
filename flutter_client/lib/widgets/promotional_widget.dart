@@ -25,7 +25,7 @@ class PromotionalWidget extends StatelessWidget {
   }) {
     return PromotionalWidget(
       title: params['title'] as String? ?? '',
-      description: params['description'] as String?,
+      description: (params['description'] ?? params['text']) as String?,
       imageUrl: params['image_url'] as String?,
       badgeText: params['badge_text'] as String?,
       actionUrl: params['action_url'] as String?,

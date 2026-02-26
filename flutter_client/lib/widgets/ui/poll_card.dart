@@ -16,7 +16,7 @@ class PollCard extends StatefulWidget {
   factory PollCard.fromJson(Map<String, dynamic> params) {
     final rawOptions = params['options'] as List<dynamic>? ?? [];
     return PollCard(
-      question: params['question'] as String? ?? '',
+      question: ((params['question'] ?? params['title'] ?? params['text']) as String?) ?? '',
       options: rawOptions.map((e) => e.toString()).toList(),
     );
   }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 class CountdownBannerCard extends StatefulWidget {
   final String title;
+  final String? text;
   final DateTime endTime;
   final String? buttonText;
   final String? buttonAction;
@@ -12,6 +13,7 @@ class CountdownBannerCard extends StatefulWidget {
   const CountdownBannerCard({
     super.key,
     required this.title,
+    this.text,
     required this.endTime,
     this.buttonText,
     this.buttonAction,
@@ -21,6 +23,7 @@ class CountdownBannerCard extends StatefulWidget {
   factory CountdownBannerCard.fromJson(Map<String, dynamic> params) {
     return CountdownBannerCard(
       title: params['title'] as String? ?? '',
+      text: params['text'] as String?,
       endTime: DateTime.tryParse(params['end_time'] as String? ?? '') ??
           DateTime.now().add(const Duration(hours: 1)),
       buttonText: params['button_text'] as String?,
@@ -97,6 +100,16 @@ class _CountdownBannerCardState extends State<CountdownBannerCard> {
               ),
               textAlign: TextAlign.center,
             ),
+            if (widget.text != null && widget.text!.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                widget.text!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
             if (widget.buttonText != null && !isExpired) ...[
               const SizedBox(height: 16),
               FilledButton(

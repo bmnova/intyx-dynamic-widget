@@ -21,7 +21,7 @@ class InformationalWidget extends StatelessWidget {
     final actionUrl = params['action_url'] as String?;
     return InformationalWidget(
       title: params['title'] as String? ?? '',
-      message: params['message'] as String? ?? '',
+      message: ((params['message'] ?? params['text']) as String?) ?? '',
       severity: params['severity'] as String? ?? 'info',
       onTap: actionUrl != null && onAction != null
           ? () => onAction(actionUrl)
