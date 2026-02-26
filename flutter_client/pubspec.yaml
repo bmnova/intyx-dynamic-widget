@@ -4,7 +4,7 @@ description: >-
   16 built-in widget types (Banner, Carousel, Countdown, Poll, Rating …),
   responsive layout, dismissible support, and an action callback system.
   Designed for server-driven UI via an AI agent backend.
-version: 0.1.1
+version: 0.1.2
 homepage: https://intyx.dev
 repository: https://github.com/bmnova/intyx-dynamic-widget
 issue_tracker: https://github.com/bmnova/intyx-dynamic-widget/issues
