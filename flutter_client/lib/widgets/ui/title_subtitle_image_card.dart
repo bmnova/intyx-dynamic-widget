@@ -17,12 +17,20 @@ class TitleSubtitleImageCard extends StatelessWidget {
     this.onTap,
   });
 
-  factory TitleSubtitleImageCard.fromJson(Map<String, dynamic> params) {
+  factory TitleSubtitleImageCard.fromJson(
+    Map<String, dynamic> params, {
+    void Function(String url)? onAction,
+  }) {
+    final actionUrl =
+        params['action_url'] as String? ?? params['link_url'] as String?;
     return TitleSubtitleImageCard(
       title: params['title'] as String? ?? '',
       subtitle: params['subtitle'] as String?,
       imageUrl: params['image_url'] as String? ?? '',
       imageFit: _parseFit(params['image_fit']),
+      onTap: actionUrl != null && onAction != null
+          ? () => onAction(actionUrl)
+          : null,
     );
   }
 

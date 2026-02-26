@@ -7,6 +7,7 @@ class BannerCard extends StatelessWidget {
   final String? actionText;
   final String? actionUrl;
   final String style; // 'default', 'gradient', 'outlined'
+  final void Function(String url)? onAction;
 
   const BannerCard({
     super.key,
@@ -15,15 +16,20 @@ class BannerCard extends StatelessWidget {
     this.actionText,
     this.actionUrl,
     this.style = 'default',
+    this.onAction,
   });
 
-  factory BannerCard.fromJson(Map<String, dynamic> params) {
+  factory BannerCard.fromJson(
+    Map<String, dynamic> params, {
+    void Function(String url)? onAction,
+  }) {
     return BannerCard(
       text: params['text'] as String? ?? '',
       emoji: params['emoji'] as String?,
       actionText: params['action_text'] as String?,
       actionUrl: params['action_url'] as String?,
       style: params['style'] as String? ?? 'default',
+      onAction: onAction,
     );
   }
 
@@ -82,7 +88,7 @@ class BannerCard extends StatelessWidget {
           ),
           if (actionText != null)
             TextButton(
-              onPressed: () {},
+              onPressed: actionUrl != null ? () => onAction?.call(actionUrl!) : null,
               style: TextButton.styleFrom(foregroundColor: textColor),
               child: Text(actionText!),
             ),

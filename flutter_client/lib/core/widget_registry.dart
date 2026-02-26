@@ -4,7 +4,12 @@ library;
 import 'package:flutter/widgets.dart';
 
 /// Signature for a factory that builds a widget from JSON params.
-typedef WidgetBuilder = Widget Function(Map<String, dynamic> params);
+/// [onAction] is called when the widget triggers an action (e.g. button tap,
+/// link tap) and receives the target URL or action string.
+typedef WidgetBuilder = Widget Function(
+  Map<String, dynamic> params, {
+  void Function(String url)? onAction,
+});
 
 class WidgetRegistry {
   WidgetRegistry._();
@@ -23,10 +28,14 @@ class WidgetRegistry {
 
   /// Build a widget for the given type and params.
   /// Returns null if the type is not registered.
-  static Widget? build(String type, Map<String, dynamic> params) {
+  static Widget? build(
+    String type,
+    Map<String, dynamic> params, {
+    void Function(String url)? onAction,
+  }) {
     final builder = _builders[type];
     if (builder == null) return null;
-    return builder(params);
+    return builder(params, onAction: onAction);
   }
 
   /// Check if a type is registered.

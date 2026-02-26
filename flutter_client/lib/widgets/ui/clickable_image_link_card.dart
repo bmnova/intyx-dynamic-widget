@@ -17,12 +17,16 @@ class ClickableImageLinkCard extends StatelessWidget {
     this.onLinkTap,
   });
 
-  factory ClickableImageLinkCard.fromJson(Map<String, dynamic> params) {
+  factory ClickableImageLinkCard.fromJson(
+    Map<String, dynamic> params, {
+    void Function(String url)? onAction,
+  }) {
     return ClickableImageLinkCard(
       title: params['title'] as String? ?? '',
       imageUrl: params['image_url'] as String? ?? '',
       linkUrl: params['link_url'] as String? ?? '',
       linkText: params['link_text'] as String?,
+      onLinkTap: onAction,
     );
   }
 

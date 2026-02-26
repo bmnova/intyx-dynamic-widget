@@ -16,12 +16,19 @@ class ContextualWidget extends StatelessWidget {
     this.onTap,
   });
 
-  factory ContextualWidget.fromJson(Map<String, dynamic> params) {
+  factory ContextualWidget.fromJson(
+    Map<String, dynamic> params, {
+    void Function(String url)? onAction,
+  }) {
+    final actionUrl = params['action_url'] as String?;
     return ContextualWidget(
       title: params['title'] as String? ?? '',
       content: params['content'] as String? ?? '',
       icon: params['icon'] as String?,
       source: params['source'] as String?,
+      onTap: actionUrl != null && onAction != null
+          ? () => onAction(actionUrl)
+          : null,
     );
   }
 

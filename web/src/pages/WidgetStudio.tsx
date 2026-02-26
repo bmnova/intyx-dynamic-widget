@@ -421,6 +421,168 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
       </div>
     );
   }
+  if (type === 'contextual') {
+    const ctxIconMap: Record<string, string> = {
+      weather: '🌤', location: '📍', calendar: '📅', clock: '🕐',
+      star: '⭐', info: 'ℹ️', warning: '⚠️',
+    };
+    const ctxIcon = ctxIconMap[String(params.icon ?? 'info')] ?? '🔲';
+    return (
+      <div style={box}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+          <div style={{ fontSize: 28, lineHeight: 1, flexShrink: 0 }}>{ctxIcon}</div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>{String(params.title ?? '')}</div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{String(params.content ?? '')}</div>
+            {params.source && <div style={{ fontSize: 11, color: '#52525b', marginTop: 6 }}>{String(params.source)}</div>}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (type === 'functional') {
+    const fnActions = Array.isArray(params.actions) ? params.actions : [];
+    return (
+      <div style={box}>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>{String(params.title ?? '')}</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {(fnActions.length > 0 ? fnActions : [{ label: 'Action', style: 'primary' }]).map((a, i) => {
+            const act = typeof a === 'string' ? { label: a, style: 'primary' } : a as { label?: string; style?: string };
+            const isPrimary = !act.style || act.style === 'primary';
+            return (
+              <span key={i} style={{
+                fontSize: 13, fontWeight: 600, padding: '7px 16px', borderRadius: 8,
+                background: isPrimary ? '#6366f1' : 'transparent',
+                color: isPrimary ? '#fff' : '#818cf8',
+                border: isPrimary ? 'none' : '1px solid #6366f1',
+              }}>
+                {String(act.label ?? '')}
+              </span>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+  if (type === 'carousel') {
+    const carouselItems = Array.isArray(params.items) ? params.items : [];
+    const displayItems = carouselItems.length > 0
+      ? carouselItems.slice(0, 4)
+      : [{ title: String(params.title ?? 'Card 1') }, { title: 'Card 2' }, { title: 'Card 3' }];
+    return (
+      <div style={box}>
+        <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
+          {displayItems.map((item, i) => {
+            const card = typeof item === 'string' ? { title: item } : item as { title?: string; description?: string; image_url?: string };
+            return (
+              <div key={i} style={{ minWidth: 130, background: '#18181b', border: '1px solid #27272a', borderRadius: 8, padding: 12, flexShrink: 0 }}>
+                {card.image_url && <div style={{ height: 56, borderRadius: 6, marginBottom: 8, backgroundImage: `url(${String(card.image_url)})`, backgroundSize: 'cover', background: '#27272a' }} />}
+                {!card.image_url && <div style={{ height: 40, borderRadius: 6, marginBottom: 8, background: '#27272a' }} />}
+                <div style={{ fontSize: 12, fontWeight: 600 }}>{String(card.title ?? `Item ${i + 1}`)}</div>
+                {card.description && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3 }}>{String(card.description)}</div>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+  if (type === 'title_subtitle_image') {
+    return (
+      <div style={{ ...box, padding: 0, overflow: 'hidden' }}>
+        {params.image_url
+          ? <div style={{ height: 100, backgroundImage: `url(${String(params.image_url)})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+          : <div style={{ height: 80, background: '#27272a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#52525b', fontSize: 13 }}>Image</div>
+        }
+        <div style={{ padding: 14 }}>
+          <div style={{ fontSize: 15, fontWeight: 600 }}>{String(params.title ?? '')}</div>
+          {params.subtitle && <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{String(params.subtitle)}</div>}
+        </div>
+      </div>
+    );
+  }
+  if (type === 'clickable_image_link') {
+    return (
+      <div style={{ ...box, padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '14px 14px 10px' }}>
+          <div style={{ fontSize: 15, fontWeight: 600 }}>{String(params.title ?? '')}</div>
+        </div>
+        {params.image_url
+          ? <div style={{ height: 80, backgroundImage: `url(${String(params.image_url)})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+          : <div style={{ height: 64, background: '#27272a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#52525b', fontSize: 13 }}>Image</div>
+        }
+        <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 14, color: '#6366f1' }}>🔗</span>
+          <span style={{ fontSize: 13, color: '#818cf8', textDecoration: 'underline', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {String(params.link_text ?? params.link_url ?? '')}
+          </span>
+        </div>
+      </div>
+    );
+  }
+  if (type === 'icon_text_action') {
+    const itaIconMap: Record<string, string> = {
+      info: 'ℹ️', warning: '⚠️', error: '🔴', success: '✅', star: '⭐',
+      favorite: '❤️', notification: '🔔', settings: '⚙️', shopping: '🛒',
+      delivery: '🚚', location: '📍', calendar: '📅', clock: '🕐',
+      weather: '🌤', offer: '🏷', gift: '🎁', campaign: '📢', target: '🎯',
+    };
+    const itaIcon = itaIconMap[String(params.icon ?? 'info')] ?? '🔲';
+    return (
+      <div style={box}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>{itaIcon}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>{String(params.title ?? '')}</div>
+            {params.description && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{String(params.description)}</div>}
+          </div>
+          {params.action_text
+            ? <span style={{ fontSize: 13, color: '#818cf8', fontWeight: 600, whiteSpace: 'nowrap' }}>{String(params.action_text)} →</span>
+            : params.action_url && <span style={{ color: '#818cf8', fontSize: 18 }}>›</span>
+          }
+        </div>
+      </div>
+    );
+  }
+  if (type === 'social_proof') {
+    return (
+      <div style={box}>
+        {params.metric && <div style={{ fontSize: 28, fontWeight: 800, color: '#6366f1' }}>{String(params.metric)}</div>}
+        {params.testimonial && (
+          <div style={{ fontSize: 13, color: 'var(--text-muted)', margin: '10px 0', fontStyle: 'italic', borderLeft: '2px solid #6366f1', paddingLeft: 10 }}>
+            "{String(params.testimonial)}"
+          </div>
+        )}
+        {params.author_name && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#27272a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>👤</div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>{String(params.author_name)}</div>
+              {params.author_title && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{String(params.author_title)}</div>}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+  if (type === 'profile') {
+    return (
+      <div style={{ ...box, textAlign: 'center' }}>
+        <div style={{
+          width: 56, height: 56, borderRadius: '50%', margin: '0 auto 10px',
+          backgroundImage: params.avatar_url ? `url(${String(params.avatar_url)})` : undefined,
+          backgroundSize: 'cover', backgroundPosition: 'center',
+          background: params.avatar_url ? undefined : '#27272a',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26,
+        }}>
+          {!params.avatar_url && '👤'}
+        </div>
+        <div style={{ fontSize: 16, fontWeight: 700 }}>{String(params.name ?? '')}</div>
+        {params.title && <div style={{ fontSize: 13, color: '#818cf8', marginTop: 2 }}>{String(params.title)}</div>}
+        {params.subtitle && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{String(params.subtitle)}</div>}
+      </div>
+    );
+  }
   return (
     <div style={box}>
       {params.title && <div style={{ fontSize: 15, fontWeight: 600 }}>{String(params.title)}</div>}

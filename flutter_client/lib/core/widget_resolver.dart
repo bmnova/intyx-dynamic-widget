@@ -58,7 +58,12 @@ class WidgetResolver {
     final widgets = <Widget>[];
 
     for (final entry in entries) {
-      final child = WidgetRegistry.build(entry.type, entry.params);
+      final entryId = entry.id;
+      final child = WidgetRegistry.build(
+        entry.type,
+        entry.params,
+        onAction: onAction != null ? (url) => onAction(entryId, url) : null,
+      );
       if (child == null) continue;
 
       // Per-widget color scheme from agent JSON takes priority,
@@ -74,7 +79,6 @@ class WidgetResolver {
       );
 
       if (entry.common.dismissible && onDismiss != null) {
-        final entryId = entry.id;
         wrapped = Dismissible(
           key: ValueKey(entryId),
           onDismissed: (_) {

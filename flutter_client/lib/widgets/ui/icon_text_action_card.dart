@@ -18,13 +18,17 @@ class IconTextActionCard extends StatelessWidget {
     this.onAction,
   });
 
-  factory IconTextActionCard.fromJson(Map<String, dynamic> params) {
+  factory IconTextActionCard.fromJson(
+    Map<String, dynamic> params, {
+    void Function(String url)? onAction,
+  }) {
     return IconTextActionCard(
       iconName: params['icon'] as String? ?? 'info',
       title: params['title'] as String? ?? '',
       description: params['description'] as String?,
       actionText: params['action_text'] as String?,
       actionUrl: params['action_url'] as String?,
+      onAction: onAction,
     );
   }
 
