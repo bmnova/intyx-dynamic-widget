@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
-import type { WidgetResponse, SuggestWidgetResponse } from '../types';
+import type { WidgetResponse, SuggestWidgetResponse, ColorPalette } from '../types';
 
 interface CatalogEntry {
   type: string;
@@ -29,6 +29,32 @@ const WIDGET_CATALOG: CatalogEntry[] = [
 ];
 
 type TabKey = 'catalog' | 'prompt' | 'preview';
+
+function formatTtl(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
+  if (seconds < 86400) return `${Math.round(seconds / 3600)}h`;
+  return `${Math.round(seconds / 86400)}d`;
+}
+
+function CountdownDisplay({ endTime }: { endTime?: string }) {
+  const getRemaining = () => {
+    if (!endTime) return '00:00:00';
+    const diff = new Date(endTime).getTime() - Date.now();
+    if (diff <= 0) return '00:00:00';
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+  const [remaining, setRemaining] = useState(getRemaining);
+  useEffect(() => {
+    if (!endTime) return;
+    const timer = setInterval(() => setRemaining(getRemaining()), 1000);
+    return () => clearInterval(timer);
+  }, [endTime]);
+  return <>{remaining}</>;
+}
 
 export default function WidgetStudio() {
   const apiKey = localStorage.getItem('intyx_api_key') || 'dev-key';
@@ -275,9 +301,24 @@ export default function WidgetStudio() {
                         <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{widget.type}</div>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      {widget.common?.priority && (
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      {widget.common?.priority != null && (
                         <span style={styles.priorityBadge}>P{widget.common.priority}</span>
+                      )}
+                      {widget.common?.ttl_seconds != null && (
+                        <span style={styles.ttlBadge} title={`TTL: ${widget.common.ttl_seconds} seconds`}>
+                          ⏱ {widget.common.ttl_seconds === 0 ? '∞' : formatTtl(widget.common.ttl_seconds as number)}
+                        </span>
+                      )}
+                      {widget.common?.dismissible != null && (
+                        <span style={widget.common.dismissible ? styles.dismissibleBadge : styles.stickyBadge}>
+                          {widget.common.dismissible ? '✕ Dismissible' : '📌 Sticky'}
+                        </span>
+                      )}
+                      {widget.common?.color_palette && (
+                        <span style={styles.paletteBadge} title="Custom color palette applied">
+                          🎨 Themed
+                        </span>
                       )}
                       <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: 'var(--success-muted)', color: 'var(--success)', fontWeight: 600 }}>
                         Ready
@@ -322,14 +363,31 @@ export default function WidgetStudio() {
 }
 
 function WidgetPreview({ widget }: { widget: WidgetResponse }) {
-  const { type, params = {} } = widget;
+  const { type, params = {}, common = {} } = widget;
+  const palette = (common.color_palette ?? {}) as ColorPalette;
+
+  const accentColor = palette.primary ?? '#6366f1';
+  const accentTextColor = palette.on_primary ?? '#fff';
+  const mutedColor = palette.on_surface ? `${palette.on_surface}99` : 'var(--text-muted)';
 
   const box: React.CSSProperties = {
-    background: '#0c0c0e',
-    border: '1px solid var(--border)',
-    borderRadius: 10,
+    background: palette.surface ?? palette.background ?? '#0c0c0e',
+    border: `1px solid ${palette.primary ? `${palette.primary}33` : 'var(--border)'}`,
+    borderRadius: palette.border_radius != null ? palette.border_radius : 10,
     padding: 20,
-    color: 'var(--text)',
+    color: palette.on_surface ?? palette.on_background ?? 'var(--text)',
+  };
+
+  const actionLinkStyle: React.CSSProperties = {
+    fontSize: 11,
+    color: mutedColor,
+    marginLeft: 6,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    maxWidth: 180,
+    display: 'inline-block',
+    verticalAlign: 'middle',
   };
 
   if (type === 'banner') {
@@ -337,35 +395,98 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
       <div style={{ ...box, textAlign: 'center', fontSize: 15 }}>
         {params.emoji && <span style={{ marginRight: 8, fontSize: 20 }}>{String(params.emoji)}</span>}
         {String(params.text ?? '')}
+        {params.action_text && (
+          <div style={{ marginTop: 10 }}>
+            <span style={{ fontSize: 13, color: accentColor, fontWeight: 600 }}>{String(params.action_text)} →</span>
+          </div>
+        )}
       </div>
     );
   }
+
   if (type === 'hero_image') {
     return (
-      <div style={{ ...box, backgroundImage: params.image_url ? `url(${String(params.image_url)})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: 120, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+      <div style={{
+        ...box,
+        backgroundImage: params.image_url ? `url(${String(params.image_url)})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        minHeight: 120,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+      }}>
         <div style={{ fontSize: 18, fontWeight: 700 }}>{String(params.title ?? '')}</div>
-        {params.button_text && <span style={{ marginTop: 8, fontSize: 13, color: '#6366f1', fontWeight: 600 }}>{String(params.button_text)} →</span>}
+        {params.button_text && (
+          <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 13, color: accentColor, fontWeight: 600 }}>{String(params.button_text)} →</span>
+            {params.button_action && (
+              <span style={actionLinkStyle} title={String(params.button_action)}>
+                {String(params.button_action)}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     );
   }
+
   if (type === 'promotional') {
     return (
       <div style={box}>
+        {params.image_url && (
+          <div style={{
+            height: 80,
+            borderRadius: 6,
+            marginBottom: 10,
+            backgroundImage: `url(${String(params.image_url)})`,
+            backgroundSize: params.image_fit === 'contain' ? 'contain' : 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            background: params.image_url ? undefined : '#27272a',
+          }} />
+        )}
         {params.badge_text && <span style={previewBadgeStyle}>{String(params.badge_text)}</span>}
         <div style={{ fontSize: 16, fontWeight: 700, marginTop: 8 }}>{String(params.title ?? '')}</div>
-        <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{String(params.description ?? '')}</div>
+        <div style={{ fontSize: 13, color: mutedColor, marginTop: 4 }}>{String(params.description ?? '')}</div>
+        {params.action_url && (
+          <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontSize: 12, color: accentColor }}>🔗</span>
+            <span style={{ ...actionLinkStyle, color: accentColor }} title={String(params.action_url)}>
+              {String(params.action_url)}
+            </span>
+          </div>
+        )}
       </div>
     );
   }
+
   if (type === 'countdown_banner') {
     return (
       <div style={{ ...box, textAlign: 'center' }}>
         <div style={{ fontSize: 15, fontWeight: 600 }}>{String(params.title ?? '')}</div>
-        <div style={{ fontSize: 24, fontWeight: 800, color: '#6366f1', margin: '8px 0' }}>00:00:00</div>
-        {params.button_text && <span style={{ fontSize: 13, color: '#818cf8' }}>{String(params.button_text)}</span>}
+        {params.end_time && (
+          <div style={{ fontSize: 11, color: mutedColor, marginTop: 2 }}>
+            ends {new Date(String(params.end_time)).toLocaleString()}
+          </div>
+        )}
+        <div style={{ fontSize: 24, fontWeight: 800, color: accentColor, margin: '8px 0', fontVariantNumeric: 'tabular-nums' }}>
+          <CountdownDisplay endTime={params.end_time ? String(params.end_time) : undefined} />
+        </div>
+        {params.button_text && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <span style={{ fontSize: 13, color: palette.secondary ?? '#818cf8' }}>{String(params.button_text)}</span>
+            {params.button_action && (
+              <span style={actionLinkStyle} title={String(params.button_action)}>
+                {String(params.button_action)}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     );
   }
+
   if (type === 'informational') {
     const severityColors: Record<string, { bg: string; fg: string; icon: string }> = {
       warning: { bg: 'rgba(251,146,60,0.1)', fg: '#f97316', icon: '⚠️' },
@@ -381,65 +502,90 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
           <span style={{ fontSize: 20, lineHeight: 1 }}>{s.icon}</span>
           <div>
             {params.title && <div style={{ fontSize: 15, fontWeight: 600, color: s.fg }}>{String(params.title)}</div>}
-            {params.message && <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{String(params.message)}</div>}
+            {params.message && <div style={{ fontSize: 13, color: mutedColor, marginTop: 4 }}>{String(params.message)}</div>}
           </div>
         </div>
       </div>
     );
   }
+
   if (type === 'rating') {
     return (
       <div style={{ ...box, textAlign: 'center' }}>
         <div style={{ fontSize: 14, fontWeight: 600 }}>{String(params.title ?? '')}</div>
-        <div style={{ fontSize: 28, margin: '8px 0', letterSpacing: 4 }}>{'★'.repeat(Number(params.max_stars) || 5)}</div>
-        {params.subtitle && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{String(params.subtitle)}</div>}
+        <div style={{ fontSize: 28, margin: '8px 0', letterSpacing: 4, color: palette.secondary ?? '#f59e0b' }}>
+          {'★'.repeat(Number(params.max_stars) || 5)}
+        </div>
+        {params.subtitle && <div style={{ fontSize: 12, color: mutedColor }}>{String(params.subtitle)}</div>}
       </div>
     );
   }
+
   if (type === 'poll') {
     const options = Array.isArray(params.options) ? params.options : [];
     return (
       <div style={box}>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10 }}>{String(params.question ?? '')}</div>
         {options.map((opt, i) => (
-          <div key={i} style={{ padding: '8px 12px', marginBottom: 6, border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>
+          <div key={i} style={{ padding: '8px 12px', marginBottom: 6, border: `1px solid ${accentColor}33`, borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>
             {typeof opt === 'string' ? opt : (opt as { label?: string; text?: string }).label ?? (opt as { label?: string; text?: string }).text ?? JSON.stringify(opt)}
           </div>
         ))}
       </div>
     );
   }
+
   if (type === 'progress') {
-    const pct = Number(params.progress) || 0;
+    const pct = Math.min(100, Math.max(0, Number(params.progress) * (Number(params.progress) <= 1 ? 100 : 1) || 0));
     return (
       <div style={box}>
         <div style={{ fontSize: 14, fontWeight: 600 }}>{String(params.title ?? '')}</div>
+        {params.subtitle && <div style={{ fontSize: 12, color: mutedColor, marginTop: 2 }}>{String(params.subtitle)}</div>}
         <div style={{ height: 8, borderRadius: 4, background: '#27272a', marginTop: 10, overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${pct}%`, background: '#6366f1', borderRadius: 4 }} />
+          <div style={{ height: '100%', width: `${pct}%`, background: accentColor, borderRadius: 4 }} />
         </div>
-        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>{String(params.progress_label ?? `${pct}%`)}</div>
+        <div style={{ fontSize: 12, color: mutedColor, marginTop: 6 }}>{String(params.progress_label ?? `${Math.round(pct)}%`)}</div>
+        {(params.action_text || params.action_url) && (
+          <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+            {params.action_text && (
+              <span style={{ fontSize: 13, color: accentColor, fontWeight: 600 }}>{String(params.action_text)} →</span>
+            )}
+            {params.action_url && (
+              <span style={actionLinkStyle} title={String(params.action_url)}>{String(params.action_url)}</span>
+            )}
+          </div>
+        )}
       </div>
     );
   }
+
   if (type === 'contextual') {
     const ctxIconMap: Record<string, string> = {
       weather: '🌤', location: '📍', calendar: '📅', clock: '🕐',
-      star: '⭐', info: 'ℹ️', warning: '⚠️',
+      star: '⭐', info: 'ℹ️', warning: '⚠️', horoscope: '✨',
+      crypto: '💰', news: '📰', sports: '⚽', prayer: '🕌',
+      earthquake: '🌍', air: '💨', uv: '☀️',
     };
-    const ctxIcon = ctxIconMap[String(params.icon ?? 'info')] ?? '🔲';
+    const iconVal = String(params.icon ?? 'info');
+    const ctxIcon = ctxIconMap[iconVal] ?? iconVal;
     return (
       <div style={box}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
           <div style={{ fontSize: 28, lineHeight: 1, flexShrink: 0 }}>{ctxIcon}</div>
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 600 }}>{String(params.title ?? '')}</div>
-            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{String(params.content ?? '')}</div>
-            {params.source && <div style={{ fontSize: 11, color: '#52525b', marginTop: 6 }}>{String(params.source)}</div>}
+            <div style={{ fontSize: 13, color: mutedColor, marginTop: 4 }}>{String(params.content ?? '')}</div>
+            {params.source && (
+              <div style={{ fontSize: 11, color: `${mutedColor}99`, marginTop: 6 }}>
+                via {String(params.source)}
+              </div>
+            )}
           </div>
         </div>
       </div>
     );
   }
+
   if (type === 'functional') {
     const fnActions = Array.isArray(params.actions) ? params.actions : [];
     return (
@@ -447,39 +593,24 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>{String(params.title ?? '')}</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {(fnActions.length > 0 ? fnActions : [{ label: 'Action', style: 'primary' }]).map((a, i) => {
-            const act = typeof a === 'string' ? { label: a, style: 'primary' } : a as { label?: string; style?: string };
+            const act = typeof a === 'string' ? { label: a, style: 'primary' } : a as { label?: string; style?: string; action?: string; url?: string };
             const isPrimary = !act.style || act.style === 'primary';
+            const actionTarget = act.action ?? act.url;
             return (
-              <span key={i} style={{
-                fontSize: 13, fontWeight: 600, padding: '7px 16px', borderRadius: 8,
-                background: isPrimary ? '#6366f1' : 'transparent',
-                color: isPrimary ? '#fff' : '#818cf8',
-                border: isPrimary ? 'none' : '1px solid #6366f1',
-              }}>
-                {String(act.label ?? '')}
-              </span>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-  if (type === 'carousel') {
-    const carouselItems = Array.isArray(params.items) ? params.items : [];
-    const displayItems = carouselItems.length > 0
-      ? carouselItems.slice(0, 4)
-      : [{ title: String(params.title ?? 'Card 1') }, { title: 'Card 2' }, { title: 'Card 3' }];
-    return (
-      <div style={box}>
-        <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
-          {displayItems.map((item, i) => {
-            const card = typeof item === 'string' ? { title: item } : item as { title?: string; description?: string; image_url?: string };
-            return (
-              <div key={i} style={{ minWidth: 130, background: '#18181b', border: '1px solid #27272a', borderRadius: 8, padding: 12, flexShrink: 0 }}>
-                {card.image_url && <div style={{ height: 56, borderRadius: 6, marginBottom: 8, backgroundImage: `url(${String(card.image_url)})`, backgroundSize: 'cover', background: '#27272a' }} />}
-                {!card.image_url && <div style={{ height: 40, borderRadius: 6, marginBottom: 8, background: '#27272a' }} />}
-                <div style={{ fontSize: 12, fontWeight: 600 }}>{String(card.title ?? `Item ${i + 1}`)}</div>
-                {card.description && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3 }}>{String(card.description)}</div>}
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+                <span style={{
+                  fontSize: 13, fontWeight: 600, padding: '7px 16px', borderRadius: 8,
+                  background: isPrimary ? accentColor : 'transparent',
+                  color: isPrimary ? accentTextColor : accentColor,
+                  border: isPrimary ? 'none' : `1px solid ${accentColor}`,
+                }}>
+                  {String(act.label ?? '')}
+                </span>
+                {actionTarget && (
+                  <span style={{ ...actionLinkStyle, marginLeft: 0, fontSize: 10 }} title={String(actionTarget)}>
+                    {String(actionTarget)}
+                  </span>
+                )}
               </div>
             );
           })}
@@ -487,21 +618,65 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
       </div>
     );
   }
-  if (type === 'title_subtitle_image') {
+
+  if (type === 'carousel') {
+    const carouselItems = Array.isArray(params.items) ? params.items : [];
+    const displayItems = carouselItems.length > 0
+      ? carouselItems.slice(0, 4)
+      : [{ title: String(params.title ?? 'Card 1') }, { title: 'Card 2' }, { title: 'Card 3' }];
     return (
-      <div style={{ ...box, padding: 0, overflow: 'hidden' }}>
-        {params.image_url
-          ? <div style={{ height: 100, backgroundImage: `url(${String(params.image_url)})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-          : <div style={{ height: 80, background: '#27272a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#52525b', fontSize: 13 }}>Image</div>
-        }
-        <div style={{ padding: 14 }}>
-          <div style={{ fontSize: 15, fontWeight: 600 }}>{String(params.title ?? '')}</div>
-          {params.subtitle && <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{String(params.subtitle)}</div>}
+      <div style={box}>
+        {params.title && carouselItems.length > 0 && (
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10 }}>{String(params.title)}</div>
+        )}
+        <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
+          {displayItems.map((item, i) => {
+            const card = typeof item === 'string'
+              ? { title: item }
+              : item as { title?: string; description?: string; image_url?: string; image_fit?: string; link_url?: string };
+            const bgSize = card.image_fit === 'contain' ? 'contain' : 'cover';
+            return (
+              <div key={i} style={{ minWidth: 130, background: '#18181b', border: `1px solid ${accentColor}22`, borderRadius: 8, padding: 12, flexShrink: 0 }}>
+                {card.image_url
+                  ? <div style={{ height: 56, borderRadius: 6, marginBottom: 8, backgroundImage: `url(${String(card.image_url)})`, backgroundSize: bgSize, backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }} />
+                  : <div style={{ height: 40, borderRadius: 6, marginBottom: 8, background: '#27272a' }} />
+                }
+                <div style={{ fontSize: 12, fontWeight: 600 }}>{String(card.title ?? `Item ${i + 1}`)}</div>
+                {card.description && <div style={{ fontSize: 11, color: mutedColor, marginTop: 3 }}>{String(card.description)}</div>}
+                {card.link_url && (
+                  <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <span style={{ fontSize: 10, color: accentColor }}>🔗</span>
+                    <span style={{ fontSize: 10, color: accentColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 90 }} title={String(card.link_url)}>
+                      {String(card.link_url)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     );
   }
+
+  if (type === 'title_subtitle_image') {
+    const bgSize = params.image_fit === 'contain' ? 'contain' : 'cover';
+    return (
+      <div style={{ ...box, padding: 0, overflow: 'hidden' }}>
+        {params.image_url
+          ? <div style={{ height: 100, backgroundImage: `url(${String(params.image_url)})`, backgroundSize: bgSize, backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }} />
+          : <div style={{ height: 80, background: '#27272a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#52525b', fontSize: 13 }}>Image</div>
+        }
+        <div style={{ padding: 14 }}>
+          <div style={{ fontSize: 15, fontWeight: 600 }}>{String(params.title ?? '')}</div>
+          {params.subtitle && <div style={{ fontSize: 13, color: mutedColor, marginTop: 4 }}>{String(params.subtitle)}</div>}
+        </div>
+      </div>
+    );
+  }
+
   if (type === 'clickable_image_link') {
+    const target = params.link_url ?? params.action_url;
     return (
       <div style={{ ...box, padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: '14px 14px 10px' }}>
@@ -512,14 +687,16 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
           : <div style={{ height: 64, background: '#27272a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#52525b', fontSize: 13 }}>Image</div>
         }
         <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 14, color: '#6366f1' }}>🔗</span>
-          <span style={{ fontSize: 13, color: '#818cf8', textDecoration: 'underline', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {String(params.link_text ?? params.link_url ?? '')}
+          <span style={{ fontSize: 14, color: accentColor }}>🔗</span>
+          <span style={{ fontSize: 13, color: accentColor, textDecoration: 'underline', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+            title={target ? String(target) : undefined}>
+            {String(params.link_text ?? target ?? '')}
           </span>
         </div>
       </div>
     );
   }
+
   if (type === 'icon_text_action') {
     const itaIconMap: Record<string, string> = {
       info: 'ℹ️', warning: '⚠️', error: '🔴', success: '✅', star: '⭐',
@@ -527,44 +704,76 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
       delivery: '🚚', location: '📍', calendar: '📅', clock: '🕐',
       weather: '🌤', offer: '🏷', gift: '🎁', campaign: '📢', target: '🎯',
     };
-    const itaIcon = itaIconMap[String(params.icon ?? 'info')] ?? '🔲';
+    const iconVal = String(params.icon ?? 'info');
+    const itaIcon = itaIconMap[iconVal] ?? iconVal;
     return (
       <div style={box}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>{itaIcon}</div>
+          <div style={{ width: 44, height: 44, borderRadius: 10, background: `${accentColor}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
+            {itaIcon}
+          </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 600 }}>{String(params.title ?? '')}</div>
-            {params.description && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{String(params.description)}</div>}
+            {params.description && <div style={{ fontSize: 12, color: mutedColor, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{String(params.description)}</div>}
+            {params.action_url && !params.action_text && (
+              <div style={{ fontSize: 10, color: accentColor, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={String(params.action_url)}>
+                {String(params.action_url)}
+              </div>
+            )}
           </div>
-          {params.action_text
-            ? <span style={{ fontSize: 13, color: '#818cf8', fontWeight: 600, whiteSpace: 'nowrap' }}>{String(params.action_text)} →</span>
-            : params.action_url && <span style={{ color: '#818cf8', fontSize: 18 }}>›</span>
-          }
+          {params.action_text && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, flexShrink: 0 }}>
+              <span style={{ fontSize: 13, color: accentColor, fontWeight: 600, whiteSpace: 'nowrap' }}>{String(params.action_text)} →</span>
+              {params.action_url && (
+                <span style={{ fontSize: 10, color: mutedColor, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={String(params.action_url)}>
+                  {String(params.action_url)}
+                </span>
+              )}
+            </div>
+          )}
+          {!params.action_text && params.action_url && (
+            <span style={{ color: accentColor, fontSize: 18, flexShrink: 0 }}>›</span>
+          )}
         </div>
       </div>
     );
   }
+
   if (type === 'social_proof') {
+    const testimonialText = params.testimonial ?? params.quote;
+    const authorName = params.author_name ?? params.author;
+    const avatarUrl = params.avatar_url;
     return (
       <div style={box}>
-        {params.metric && <div style={{ fontSize: 28, fontWeight: 800, color: '#6366f1' }}>{String(params.metric)}</div>}
-        {params.testimonial && (
-          <div style={{ fontSize: 13, color: 'var(--text-muted)', margin: '10px 0', fontStyle: 'italic', borderLeft: '2px solid #6366f1', paddingLeft: 10 }}>
-            "{String(params.testimonial)}"
+        {params.metric && (
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+            <div style={{ fontSize: 28, fontWeight: 800, color: accentColor }}>{String(params.metric)}</div>
+            {params.metric_label && (
+              <div style={{ fontSize: 13, color: mutedColor, fontWeight: 500 }}>{String(params.metric_label)}</div>
+            )}
           </div>
         )}
-        {params.author_name && (
+        {testimonialText && (
+          <div style={{ fontSize: 13, color: mutedColor, margin: '10px 0', fontStyle: 'italic', borderLeft: `2px solid ${accentColor}`, paddingLeft: 10 }}>
+            "{String(testimonialText)}"
+          </div>
+        )}
+        {authorName && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#27272a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>👤</div>
+            {avatarUrl
+              ? <div style={{ width: 28, height: 28, borderRadius: '50%', backgroundImage: `url(${String(avatarUrl)})`, backgroundSize: 'cover', backgroundPosition: 'center', flexShrink: 0 }} />
+              : <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#27272a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>👤</div>
+            }
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>{String(params.author_name)}</div>
-              {params.author_title && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{String(params.author_title)}</div>}
+              <div style={{ fontSize: 13, fontWeight: 600 }}>{String(authorName)}</div>
+              {params.author_title && <div style={{ fontSize: 11, color: mutedColor }}>{String(params.author_title)}</div>}
             </div>
           </div>
         )}
       </div>
     );
   }
+
   if (type === 'profile') {
     return (
       <div style={{ ...box, textAlign: 'center' }}>
@@ -578,19 +787,34 @@ function WidgetPreview({ widget }: { widget: WidgetResponse }) {
           {!params.avatar_url && '👤'}
         </div>
         <div style={{ fontSize: 16, fontWeight: 700 }}>{String(params.name ?? '')}</div>
-        {params.title && <div style={{ fontSize: 13, color: '#818cf8', marginTop: 2 }}>{String(params.title)}</div>}
-        {params.subtitle && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{String(params.subtitle)}</div>}
+        {params.title && <div style={{ fontSize: 13, color: accentColor, marginTop: 2 }}>{String(params.title)}</div>}
+        {params.subtitle && <div style={{ fontSize: 12, color: mutedColor, marginTop: 4 }}>{String(params.subtitle)}</div>}
+        {(params.action_text || params.action_url) && (
+          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            {params.action_text && (
+              <span style={{ fontSize: 13, fontWeight: 600, padding: '6px 20px', borderRadius: 20, background: accentColor, color: accentTextColor }}>
+                {String(params.action_text)}
+              </span>
+            )}
+            {params.action_url && (
+              <span style={{ fontSize: 10, color: mutedColor, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={String(params.action_url)}>
+                {String(params.action_url)}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     );
   }
+
   return (
     <div style={box}>
       {params.title && <div style={{ fontSize: 15, fontWeight: 600 }}>{String(params.title)}</div>}
-      {params.subtitle && <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{String(params.subtitle)}</div>}
-      {params.description && <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{String(params.description)}</div>}
+      {params.subtitle && <div style={{ fontSize: 13, color: mutedColor, marginTop: 4 }}>{String(params.subtitle)}</div>}
+      {params.description && <div style={{ fontSize: 13, color: mutedColor, marginTop: 4 }}>{String(params.description)}</div>}
       {params.text && <div style={{ fontSize: 14, marginTop: 4 }}>{String(params.text)}</div>}
       {params.action_text && (
-        <span style={{ fontSize: 13, color: '#6366f1', fontWeight: 600, marginTop: 8, display: 'inline-block' }}>
+        <span style={{ fontSize: 13, color: accentColor, fontWeight: 600, marginTop: 8, display: 'inline-block' }}>
           {String(params.action_text)} →
         </span>
       )}
@@ -657,6 +881,10 @@ const styles: Record<string, React.CSSProperties> = {
   previewIcon: { width: 40, height: 40, borderRadius: 10, background: 'var(--primary-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 },
   previewBody: {},
   priorityBadge: { fontSize: 11, fontWeight: 700, color: '#6366f1', background: 'var(--primary-muted)', padding: '2px 8px', borderRadius: 10 },
+  ttlBadge: { fontSize: 11, fontWeight: 700, color: '#f59e0b', background: 'rgba(245,158,11,0.12)', padding: '2px 8px', borderRadius: 10 },
+  dismissibleBadge: { fontSize: 11, fontWeight: 600, color: '#94a3b8', background: 'rgba(148,163,184,0.1)', padding: '2px 8px', borderRadius: 10 },
+  stickyBadge: { fontSize: 11, fontWeight: 600, color: '#818cf8', background: 'rgba(99,102,241,0.1)', padding: '2px 8px', borderRadius: 10 },
+  paletteBadge: { fontSize: 11, fontWeight: 600, color: '#c084fc', background: 'rgba(192,132,252,0.1)', padding: '2px 8px', borderRadius: 10 },
   codeBlock: { background: '#0c0c0e', border: '1px solid var(--border)', borderRadius: 8, padding: '14px 18px', fontSize: 12, lineHeight: 1.6, color: '#c4b5fd', fontFamily: "'JetBrains Mono', 'Fira Code', monospace", overflow: 'auto', whiteSpace: 'pre', margin: 0, marginTop: 8 },
   rawToggle: { fontSize: 14, color: 'var(--text-muted)', cursor: 'pointer' },
 };
