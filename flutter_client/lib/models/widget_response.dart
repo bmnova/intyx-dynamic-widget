@@ -204,10 +204,10 @@ class WidgetEntry {
       id: json['id'] as String? ?? '',
       type: json['type'] as String,
       params: rawParams is Map
-          ? Map<String, dynamic>.from(rawParams as Map)
+          ? Map<String, dynamic>.from(rawParams)
           : <String, dynamic>{},
       common: rawCommon is Map
-          ? CommonParams.fromJson(Map<String, dynamic>.from(rawCommon as Map))
+          ? CommonParams.fromJson(Map<String, dynamic>.from(rawCommon))
           : const CommonParams(),
     );
   }

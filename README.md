@@ -48,6 +48,8 @@ Flutter App  →  signal bundle  →  Decision Layer  →  Template Catalog
 
 ## Quick start
 
+**API key required.** This package needs a valid API key to talk to the widget service and evaluate widgets. Access the service and get your API key at **[dynamic.intyx.ai](https://dynamic.intyx.ai)** — the package will not work without a key from that site.
+
 ### 1. Backend
 
 ```bash
