@@ -1,3 +1,8 @@
+## 0.1.3
+
+- **Documentation**: README now states that an API key from [dynamic.intyx.ai](https://dynamic.intyx.ai) is required; the package does not work without it.
+- **Fixes**: Removed unnecessary casts in `WidgetEntry.fromJson`; removed redundant `dart:ui` import in tests. Analyzer clean with `dart analyze --fatal-infos`.
+
 ## 0.1.2
 
 - **Full JSON response rendering**: All fields from widget JSON response (title, subtitle, body, cta, image, url, alias, text) are now displayed in widget previews.
