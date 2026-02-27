@@ -117,6 +117,19 @@ export interface SuggestWidgetResponse {
   [key: string]: unknown;
 }
 
+export interface UsageCounter {
+  used: number;
+  limit: number;
+  percent?: number;
+}
+
+export interface UsageStats {
+  plan: Plan;
+  api_calls: UsageCounter;
+  mau: UsageCounter;
+  resets_at: string;
+}
+
 export interface AdminStats {
   total_licenses: number;
   active_licenses: number;

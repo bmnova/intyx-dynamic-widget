@@ -6,6 +6,7 @@ import json
 import os
 import threading
 import time
+from datetime import date
 from typing import Any
 
 import firebase_admin
@@ -353,6 +354,76 @@ def save_agent_tasks(api_key: str, tasks: list[dict[str, Any]]) -> None:
 
 
 # --- Analytics ---
+
+
+def _current_month() -> str:
+    """Return the current month as a YYYY-MM string (e.g. '2026-02')."""
+    return date.today().strftime("%Y-%m")
+
+
+# --- Usage Tracking ---
+
+
+def increment_api_call(license_key: str, user_id: str | None = None) -> None:
+    """Atomically increment the monthly evaluate-call counter for a license.
+
+    Also tracks unique users (MAU) when *user_id* is provided.
+    Counters reset automatically when a new calendar month begins.
+    """
+    db = get_db()
+    doc_ref = db.collection("usage").document(license_key)
+    current_month = _current_month()
+
+    @firestore.transactional
+    def _update(transaction):
+        snapshot = doc_ref.get(transaction=transaction)
+        if snapshot.exists:
+            data = snapshot.to_dict()
+            if data.get("month") != current_month:
+                # New month — reset counters
+                transaction.set(doc_ref, {
+                    "month": current_month,
+                    "api_calls": 1,
+                    "unique_users": [user_id] if user_id else [],
+                    "updated_at": time.time(),
+                })
+            else:
+                updates: dict[str, Any] = {
+                    "api_calls": firestore.Increment(1),
+                    "updated_at": time.time(),
+                }
+                if user_id:
+                    updates["unique_users"] = firestore.ArrayUnion([user_id])
+                transaction.update(doc_ref, updates)
+        else:
+            transaction.set(doc_ref, {
+                "month": current_month,
+                "api_calls": 1,
+                "unique_users": [user_id] if user_id else [],
+                "updated_at": time.time(),
+            })
+
+    _update(db.transaction())
+
+
+def get_usage(license_key: str) -> dict[str, Any]:
+    """Return this month's usage stats for *license_key*.
+
+    Returns a dict with ``api_calls`` (int) and ``unique_users`` (list[str]).
+    Both fields reset to zero/empty at the start of each calendar month.
+    """
+    db = get_db()
+    doc = db.collection("usage").document(license_key).get()
+    current_month = _current_month()
+    if doc.exists:
+        data = doc.to_dict()
+        if data.get("month") == current_month:
+            return {
+                "api_calls": data.get("api_calls", 0),
+                "unique_users": data.get("unique_users", []),
+                "month": current_month,
+            }
+    return {"api_calls": 0, "unique_users": [], "month": current_month}
 
 
 def get_widget_analytics(api_key: str) -> dict[str, Any]:

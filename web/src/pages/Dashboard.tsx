@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
-import type { LicenseInfo, Plan } from '../types';
+import type { LicenseInfo, Plan, UsageStats } from '../types';
 
 export default function Dashboard() {
   const apiKey = localStorage.getItem('intyx_api_key') || 'demo';
   const purchasedAt = localStorage.getItem('intyx_purchased_at');
   const [copied, setCopied] = useState(false);
   const [licenseInfo, setLicenseInfo] = useState<LicenseInfo | null>(null);
+  const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
   const [validating, setValidating] = useState(!!apiKey);
 
   useEffect(() => {
@@ -32,7 +33,21 @@ export default function Dashboard() {
         setValidating(false);
       }
     };
+    const fetchUsage = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/licenses/usage`, {
+          headers: { 'Authorization': `Bearer ${apiKey}` },
+        });
+        if (res.ok) {
+          const data: UsageStats = await res.json();
+          setUsageStats(data);
+        }
+      } catch (err) {
+        console.error('Usage fetch failed:', err);
+      }
+    };
     validate();
+    fetchUsage();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -62,6 +77,34 @@ export default function Dashboard() {
   // suppress unused var warning for validating
   void validating;
 
+  const UsageBar = ({ label, used, limit, percent }: { label: string; used: number; limit: number; percent?: number }) => {
+    const pct = limit <= 0 ? 0 : (percent ?? Math.min(Math.round(used * 100 / limit), 100));
+    const isWarning = limit > 0 && pct >= 80;
+    const isOver = limit > 0 && pct >= 100;
+    const barColor = isOver ? '#ef4444' : isWarning ? '#f59e0b' : '#6366f1';
+    const limitLabel = limit <= 0 ? '∞' : limit.toLocaleString();
+    return (
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
+          <span style={{ fontWeight: 600 }}>
+            {label}
+            {isWarning && !isOver && <span style={{ color: '#f59e0b', marginLeft: 6 }}>⚠ Approaching limit</span>}
+            {isOver && <span style={{ color: '#ef4444', marginLeft: 6 }}>Limit reached</span>}
+          </span>
+          <span style={{ color: 'var(--text-muted)' }}>
+            {used.toLocaleString()} / {limitLabel}
+            {limit > 0 && <span style={{ marginLeft: 6 }}>({pct}%)</span>}
+          </span>
+        </div>
+        <div style={{ height: 6, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
+          {limit > 0 && (
+            <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: 4, transition: 'width 0.4s ease' }} />
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <main id="main-content" style={{ maxWidth: 800, margin: '0 auto', padding: '60px 24px' }}>
       <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>Dashboard</h1>
@@ -84,6 +127,29 @@ export default function Dashboard() {
           </div>
         )}
       </section>
+
+      {/* Usage */}
+      {usageStats && (
+        <section aria-label="Usage statistics" style={{ ...styles.card, marginTop: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Usage this month</h2>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              Resets {new Date(usageStats.resets_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}
+            </span>
+          </div>
+          <UsageBar
+            label="Monthly Active Users"
+            used={usageStats.mau.used}
+            limit={usageStats.mau.limit}
+            percent={usageStats.mau.percent}
+          />
+          <UsageBar
+            label="Evaluate API calls"
+            used={usageStats.api_calls.used}
+            limit={usageStats.api_calls.limit}
+          />
+        </section>
+      )}
 
       {/* API Key */}
       <section aria-label="API key" style={{ ...styles.card, marginTop: 16 }}>
@@ -169,19 +235,23 @@ void main() {
         </Link>
       </nav>
 
-      {/* Quick stats placeholder */}
-      <section aria-label="Usage statistics" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 16 }}>
+      {/* Quick stats */}
+      <section aria-label="Quick stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 16 }}>
         <div style={styles.statCard}>
-          <div style={styles.statValue}>0</div>
-          <div style={styles.statLabel}>Widget Views</div>
+          <div style={styles.statValue}>{usageStats ? usageStats.api_calls.used.toLocaleString() : '—'}</div>
+          <div style={styles.statLabel}>Evaluate Calls</div>
         </div>
         <div style={styles.statCard}>
-          <div style={styles.statValue}>0</div>
-          <div style={styles.statLabel}>Interactions</div>
-        </div>
-        <div style={styles.statCard}>
-          <div style={styles.statValue}>0</div>
+          <div style={styles.statValue}>{usageStats ? usageStats.mau.used.toLocaleString() : '—'}</div>
           <div style={styles.statLabel}>Active Users</div>
+        </div>
+        <div style={styles.statCard}>
+          <div style={styles.statValue}>
+            {usageStats && usageStats.mau.limit > 0
+              ? `${usageStats.mau.percent ?? 0}%`
+              : '∞'}
+          </div>
+          <div style={styles.statLabel}>MAU Used</div>
         </div>
       </section>
 

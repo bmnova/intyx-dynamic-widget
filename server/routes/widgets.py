@@ -13,6 +13,23 @@ from server.triggers.engine import TriggerEngine, WidgetTriggerRule
 widgets_bp = Blueprint("widgets", __name__, url_prefix="/api/widgets")
 
 
+def _get_license_key(body: dict | None = None) -> str | None:
+    """Extract an intyx_* license key from the request (header → query → body)."""
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        token = auth[7:]
+        if token.startswith("intyx_"):
+            return token
+    token = request.args.get("api_key", "")
+    if token.startswith("intyx_"):
+        return token
+    if body:
+        token = body.get("api_key", "")
+        if isinstance(token, str) and token.startswith("intyx_"):
+            return token
+    return None
+
+
 @widgets_bp.route("", methods=["GET"])
 def list_widgets():
     """List all active widgets.
@@ -334,6 +351,21 @@ def evaluate_triggers():
     if not data:
         return jsonify({"error": "Context required"}), 400
 
+    # ── MAU limit check ──────────────────────────────────────────────
+    license_key = _get_license_key(data)
+    if license_key:
+        lic = fb.get_license(license_key)
+        if lic:
+            mau_limit = lic.get("mau_limit", -1)
+            if mau_limit > 0:
+                usage = fb.get_usage(license_key)
+                if len(usage.get("unique_users", [])) >= mau_limit:
+                    return jsonify({
+                        "widgets": [],
+                        "fallback": True,
+                        "reason": "limit_exceeded",
+                    })
+
     # Build TriggerContext from request
     weather = None
     if "weather" in data:
@@ -408,6 +440,14 @@ def evaluate_triggers():
         widget_data = widgets.get(w.id)
         if widget_data:
             result.append(widget_data)
+
+    # ── Track usage ──────────────────────────────────────────────────
+    if license_key:
+        user_id = data.get("user_id") or data.get("developer_params", {}).get("user_id")
+        try:
+            fb.increment_api_call(license_key, user_id if isinstance(user_id, str) else None)
+        except Exception:
+            pass  # Never fail a widget request due to tracking errors
 
     return jsonify({"widgets": result})
 

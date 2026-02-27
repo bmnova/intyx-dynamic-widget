@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import date
 
 from flask import Blueprint, jsonify, request
 
@@ -146,4 +147,92 @@ def validate_license():
         "plan": doc["plan"],
         "widget_limit": doc["widget_limit"],
         "mau_limit": doc["mau_limit"],
+    })
+
+
+@licenses_bp.route("/usage", methods=["GET"])
+def get_license_usage():
+    """Return current-month usage statistics for the authenticated license key.
+    ---
+    tags:
+      - Licenses
+    summary: Get license usage
+    description: >
+      Returns API call counts and Monthly Active Users (MAU) for the
+      current calendar month, along with plan limits and the reset date.
+    security:
+      - BearerAuth: []
+    responses:
+      200:
+        description: Usage statistics.
+        schema:
+          type: object
+          properties:
+            plan:
+              type: string
+              example: starter
+            api_calls:
+              type: object
+              properties:
+                used:
+                  type: integer
+                limit:
+                  type: integer
+                  description: -1 means unlimited.
+            mau:
+              type: object
+              properties:
+                used:
+                  type: integer
+                limit:
+                  type: integer
+                  description: -1 means unlimited.
+                percent:
+                  type: integer
+            resets_at:
+              type: string
+              format: date
+              example: "2026-03-01"
+      401:
+        description: Valid license key required.
+    """
+    auth = request.headers.get("Authorization", "")
+    api_key = auth[7:] if auth.startswith("Bearer ") else request.args.get("api_key", "")
+
+    if not api_key.startswith("intyx_"):
+        return jsonify({"error": "Valid license key required"}), 401
+
+    lic = fb.get_license(api_key)
+    if not lic or not lic.get("active"):
+        return jsonify({"error": "License not found or inactive"}), 401
+
+    usage = fb.get_usage(api_key)
+    mau_limit = lic.get("mau_limit", -1)
+    mau_used = len(usage.get("unique_users", []))
+    api_calls_used = usage.get("api_calls", 0)
+
+    # First day of next month = reset date
+    today = date.today()
+    if today.month == 12:
+        resets_at = date(today.year + 1, 1, 1)
+    else:
+        resets_at = date(today.year, today.month + 1, 1)
+
+    def _pct(used: int, limit: int) -> int:
+        if limit <= 0:
+            return 0
+        return min(round(used * 100 / limit), 100)
+
+    return jsonify({
+        "plan": lic.get("plan"),
+        "api_calls": {
+            "used": api_calls_used,
+            "limit": -1,  # No hard cap on evaluate calls; MAU is the enforced limit
+        },
+        "mau": {
+            "used": mau_used,
+            "limit": mau_limit,
+            "percent": _pct(mau_used, mau_limit),
+        },
+        "resets_at": resets_at.isoformat(),
     })
