@@ -9,6 +9,8 @@ import WidgetStudio from './pages/WidgetStudio';
 import Admin from './pages/Admin';
 import Analytics from './pages/Analytics';
 import Integrations from './pages/Integrations';
+import Developers from './pages/Developers';
+import Product from './pages/Product';
 import NotFound from './pages/NotFound';
 
 export default function App() {
@@ -51,6 +53,8 @@ export default function App() {
           }
         />
         <Route path="/integrations" element={<Integrations />} />
+        <Route path="/developers" element={<Developers />} />
+        <Route path="/product" element={<Product />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
