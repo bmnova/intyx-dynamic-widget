@@ -61,6 +61,11 @@ class WidgetService {
   ///
   /// On network failure, returns the last cached trigger evaluation when a
   /// [cache] has been configured. Throws if there is no cache fallback.
+  ///
+  /// When the license's MAU quota is exceeded the server returns
+  /// `{"widgets": [], "fallback": true}`. In that case this method returns
+  /// the last cached result so the user still sees content, or an empty list
+  /// if no cache is available.
   Future<List<WidgetEntry>> evaluateTriggers(TriggerContext context) async {
     const cacheKey = 'evaluateTriggers';
     try {
@@ -71,10 +76,14 @@ class WidgetService {
         body: json.encode(context.toJson()),
       );
       _checkResponse(response);
+      final body = json.decode(response.body) as Map<String, dynamic>;
+      // Quota exceeded — serve cached content instead of an empty screen
+      if (body['fallback'] == true) {
+        final cached = await cache?.load(cacheKey);
+        return cached ?? [];
+      }
       await cache?.save(cacheKey, response.body);
-      return WidgetResponse.fromJson(
-              json.decode(response.body) as Map<String, dynamic>)
-          .widgets;
+      return WidgetResponse.fromJson(body).widgets;
     } catch (_) {
       final cached = await cache?.load(cacheKey);
       if (cached != null) return cached;
