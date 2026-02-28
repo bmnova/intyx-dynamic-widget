@@ -7,6 +7,7 @@ interface NavLink {
 
 const links: NavLink[] = [
   { to: '/', label: 'Home' },
+  { to: '/live', label: 'Live' },
   { to: '/integrations', label: 'Integrations' },
   { to: '/pricing', label: 'Pricing' },
   { to: '/dashboard', label: 'Dashboard' },

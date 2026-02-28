@@ -101,6 +101,7 @@ def create_app() -> Flask:
         "/api/licenses/validate",
         "/api/licenses",
         "/api/paddle/webhook",
+        "/api/email-signup",
     ))
 
     @app.before_request
@@ -154,6 +155,7 @@ def create_app() -> Flask:
     from server.routes.paddle_webhook import paddle_bp
     from server.routes.admin import admin_bp
     from server.routes.analytics import analytics_bp
+    from server.routes.email_signup import email_signup_bp
 
     app.register_blueprint(widgets_bp)
     app.register_blueprint(ai_bp)
@@ -163,6 +165,7 @@ def create_app() -> Flask:
     app.register_blueprint(paddle_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(analytics_bp)
+    app.register_blueprint(email_signup_bp)
 
     # Apply stricter rate limit to AI endpoints
     from server.config import RATE_LIMIT_AI
