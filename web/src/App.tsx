@@ -11,6 +11,7 @@ import Analytics from './pages/Analytics';
 import Integrations from './pages/Integrations';
 import Developers from './pages/Developers';
 import Product from './pages/Product';
+import LiveEventSignup from './pages/LiveEventSignup';
 import NotFound from './pages/NotFound';
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Landing />} />
+        <Route path="/live" element={<LiveEventSignup />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route
           path="/dashboard"

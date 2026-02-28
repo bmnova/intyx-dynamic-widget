@@ -426,6 +426,47 @@ def get_usage(license_key: str) -> dict[str, Any]:
     return {"api_calls": 0, "unique_users": [], "month": current_month}
 
 
+# --- Email Signup Operations ---
+
+
+def add_email_signup(email: str, source: str = "live_event") -> bool:
+    """Add an email signup for live event notifications.
+
+    Returns False if the email is already registered for the given source.
+    """
+    db = get_db()
+    doc_id = f"{source}:{email}"
+    doc_ref = db.collection("email_signups").document(doc_id)
+    if doc_ref.get().exists:
+        return False
+    doc_ref.set({
+        "email": email,
+        "source": source,
+        "created_at": time.time(),
+    })
+    return True
+
+
+def get_email_signups(source: str = "live_event", limit: int = 500) -> list[dict[str, Any]]:
+    """List email signups for a given source."""
+    db = get_db()
+    docs = (
+        db.collection("email_signups")
+        .where("source", "==", source)
+        .order_by("created_at", direction="DESCENDING")
+        .limit(limit)
+        .stream()
+    )
+    return [{**doc.to_dict(), "id": doc.id} for doc in docs]
+
+
+def count_email_signups(source: str = "live_event") -> int:
+    """Count email signups for a given source."""
+    db = get_db()
+    docs = db.collection("email_signups").where("source", "==", source).stream()
+    return sum(1 for _ in docs)
+
+
 def get_widget_analytics(api_key: str) -> dict[str, Any]:
     """Aggregate interaction data for all widgets owned by this api_key.
 
