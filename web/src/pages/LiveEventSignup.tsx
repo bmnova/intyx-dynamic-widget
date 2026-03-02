@@ -23,18 +23,18 @@ export default function LiveEventSignup() {
       const data = await res.json();
 
       if (!res.ok) {
-        setToast({ type: 'error', message: data.error || 'Bir hata olustu.' });
+        setToast({ type: 'error', message: data.error || 'Something went wrong.' });
         return;
       }
 
       setSubmitted(true);
       if (data.already_registered) {
-        setToast({ type: 'info', message: 'Bu e-posta adresi zaten kayitli.' });
+        setToast({ type: 'info', message: 'This email is already registered.' });
       } else {
-        setToast({ type: 'success', message: 'Basariyla kaydoldunuz! Live baslayinca bildirim alacaksiniz.' });
+        setToast({ type: 'success', message: 'Successfully subscribed! We\'ll notify you when we go live.' });
       }
     } catch {
-      setToast({ type: 'error', message: 'Baglanti hatasi. Lutfen tekrar deneyin.' });
+      setToast({ type: 'error', message: 'Connection error. Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -47,12 +47,12 @@ export default function LiveEventSignup() {
       <section style={styles.hero}>
         <div style={styles.badge}>Live Event</div>
         <h1 style={styles.h1}>
-          Live'a katilmayi<br />
-          <span style={{ color: '#6366f1' }}>kacirmak istemiyor musunuz?</span>
+          Don't want to<br />
+          <span style={{ color: '#6366f1' }}>miss the live event?</span>
         </h1>
         <p style={styles.subtitle}>
-          E-posta adresinizi birakin, live basladiginda size haber verelim.
-          Hicbir sey kacirmayin!
+          Drop your email and we'll let you know when we go live.
+          Never miss a thing!
         </p>
       </section>
 
@@ -62,10 +62,10 @@ export default function LiveEventSignup() {
             <input
               type="email"
               required
-              placeholder="ornek@email.com"
+              placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              aria-label="E-posta adresiniz"
+              aria-label="Your email address"
               style={styles.input}
             />
             <button
@@ -77,26 +77,26 @@ export default function LiveEventSignup() {
                 cursor: loading ? 'not-allowed' : 'pointer',
               }}
             >
-              {loading ? 'Kaydediliyor...' : 'Beni Haberdar Et'}
+              {loading ? 'Subscribing...' : 'Notify Me'}
             </button>
           </div>
           <p style={styles.privacy}>
-            Sadece live bildirim icin kullanilir. Spam gondermiyoruz.
+            Only used for live notifications. We never send spam.
           </p>
         </form>
       ) : (
         <div style={styles.successCard}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>&#10003;</div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Kaydoldunuz!</h2>
+          <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>You're in!</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: 15, lineHeight: 1.6 }}>
-            Live yayinimiz basladiginda <strong style={{ color: 'var(--text)' }}>{email.trim().toLowerCase()}</strong> adresine
-            bildirim gonderecegiz.
+            We'll send a notification to <strong style={{ color: 'var(--text)' }}>{email.trim().toLowerCase()}</strong> when
+            we go live.
           </p>
           <button
             onClick={() => { setSubmitted(false); setEmail(''); }}
             style={styles.btnSecondary}
           >
-            Baska bir e-posta ekle
+            Add another email
           </button>
         </div>
       )}
@@ -105,9 +105,9 @@ export default function LiveEventSignup() {
       <section style={styles.infoSection}>
         <div style={styles.infoGrid}>
           {[
-            { icon: '\u{1F514}', title: 'Aninda Bildirim', desc: 'Live baslar baslamaz e-posta adresinize bildirim gonderiyoruz.' },
-            { icon: '\u{1F512}', title: 'Gizlilik', desc: 'E-posta adresiniz sadece live bildirimi icin kullanilir, ucuncu taraflarla paylasilmaz.' },
-            { icon: '\u{26A1}', title: 'Hicbir Sey Kacirmayin', desc: 'Onemli duyurular, canli etkinlikler ve ozel iceriklerden ilk siz haberdar olun.' },
+            { icon: '\u{1F514}', title: 'Instant Alert', desc: 'Get notified the moment we go live — straight to your inbox.' },
+            { icon: '\u{1F512}', title: 'Privacy First', desc: 'Your email is only used for live notifications and is never shared with third parties.' },
+            { icon: '\u{26A1}', title: 'Never Miss Out', desc: 'Be the first to know about announcements, live events, and exclusive content.' },
           ].map((item) => (
             <div key={item.title} style={styles.infoCard}>
               <span style={{ fontSize: 28, display: 'block', marginBottom: 12 }}>{item.icon}</span>
