@@ -1,237 +1,237 @@
-# Geliştirme Önerileri
+# Development Recommendations
 
-Bu doküman, Intyx Dynamic Widget sisteminin mevcut durumunu analiz ederek belirlenen geliştirme alanlarını öncelik sırasıyla listeler.
-
----
-
-## Mevcut Durum Özeti
-
-| Alan | Durum |
-|------|-------|
-| Backend (Python/Flask) | Üretim hazır, 61 test |
-| Flutter SDK | Üretim hazır, 16 widget tipi |
-| Web Dashboard (React) | Çalışıyor, TypeScript yok |
-| MCP Server | 24 tool, Gemini entegrasyonu |
-| CI/CD | GitHub Actions pipeline mevcut |
-| Test (web) | **Yok** |
-| Monitoring | **Yok** |
+This document analyzes the current state of the Intyx Dynamic Widget system and lists identified improvement areas in order of priority.
 
 ---
 
-## Yüksek Öncelik
+## Current Status Summary
 
-### 1. Web Testleri Ekle
-
-**Neden:** Web frontend için sıfır test var. Kod değişikliklerinde regresyon riski yüksek.
-
-**Yapılacaklar:**
-- Vitest + React Testing Library kurulumu
-- `WidgetStudio.jsx`, `AgentTasks.jsx`, `Dashboard.jsx` için birim testler
-- Temel sayfa render testleri (`Landing`, `Pricing`)
-- API çağrıları için mock kurulumu
-
-**Tahmini kapsam:** En az 20–30 test
+| Area | Status |
+|------|--------|
+| Backend (Python/Flask) | Production-ready, 61 tests |
+| Flutter SDK | Production-ready, 16 widget types |
+| Web Dashboard (React) | Working, no TypeScript |
+| MCP Server | 24 tools, Gemini integration |
+| CI/CD | GitHub Actions pipeline available |
+| Tests (web) | **None** |
+| Monitoring | **None** |
 
 ---
 
-### 2. TypeScript Geçişi (Web)
+## High Priority
 
-**Neden:** Web frontend tamamen `.jsx`. Tip hatalarını geliştirme aşamasında yakalamak için TypeScript şart.
+### 1. Add Web Tests
 
-**Yapılacaklar:**
-- `tsconfig.json` ekle, `vite.config.js` güncelle
-- `.jsx` → `.tsx` dönüşümü (sayfa + bileşenler)
-- API yanıt tipleri için ortak `types/` klasörü
-- Paddle ve config dosyaları için tip tanımları
+**Why:** Zero tests for the web frontend. High regression risk on code changes.
 
-**Tavsiye:** Bileşenleri tek tek taşı, birden geçmeye çalışma.
+**Action items:**
+- Set up Vitest + React Testing Library
+- Unit tests for `WidgetStudio.jsx`, `AgentTasks.jsx`, `Dashboard.jsx`
+- Basic page render tests (`Landing`, `Pricing`)
+- Mock setup for API calls
+
+**Estimated scope:** At least 20-30 tests
+
+---
+
+### 2. TypeScript Migration (Web)
+
+**Why:** Web frontend is entirely `.jsx`. TypeScript is essential for catching type errors during development.
+
+**Action items:**
+- Add `tsconfig.json`, update `vite.config.js`
+- `.jsx` -> `.tsx` conversion (pages + components)
+- Shared `types/` folder for API response types
+- Type definitions for Paddle and config files
+
+**Recommendation:** Migrate components one at a time, don't try to do it all at once.
 
 ---
 
 ### 3. Analytics Dashboard
 
-**Neden:** Widget görüntüleme, tıklama ve dismiss verisi toplanıyor (Firestore'da `user_states`) ama görselleştirilmiyor.
+**Why:** Widget view, click, and dismiss data is being collected (in Firestore `user_states`) but not visualized.
 
-**Yapılacaklar:**
-- Web dashboard'a yeni "Analytics" sayfası ekle
-- Widget başına gösterim / tıklama / dismiss sayısı
-- En çok / en az etkileşim alan widget'lar
-- Zaman bazlı grafik (günlük / haftalık)
-- Recharts veya Chart.js ile görselleştirme
+**Action items:**
+- Add a new "Analytics" page to the web dashboard
+- Views / clicks / dismisses per widget
+- Most / least interacted widgets
+- Time-based charts (daily / weekly)
+- Visualization with Recharts or Chart.js
 
 ---
 
-## Orta Öncelik
+## Medium Priority
 
 ### 4. Redis / Valkey Cache
 
-**Neden:** Şu an Firestore cache-first pattern kullanılıyor. Yük altında Firestore okuma maliyeti ve gecikme artıyor.
+**Why:** Currently using Firestore cache-first pattern. Under load, Firestore read costs and latency increase.
 
-**Yapılacaklar:**
-- `redis-py` bağımlılığı ekle
-- Hava durumu, haberler, burç, trend verilerini Redis'te cache'le (TTL: 15–60 dk)
-- Firestore'u Redis miss durumunda fallback olarak kullan
-- `REDIS_URL` env değişkeni ekle (Railway / Upstash ücretsiz tier)
+**Action items:**
+- Add `redis-py` dependency
+- Cache weather, news, horoscope, trend data in Redis (TTL: 15-60 min)
+- Use Firestore as fallback on Redis miss
+- Add `REDIS_URL` env variable (Railway / Upstash free tier)
 
 ---
 
-### 5. JWT Tabanlı Kimlik Doğrulama
+### 5. JWT-Based Authentication
 
-**Neden:** Mevcut sistem API key + License key ikili sistemi kullanıyor. JWT ile kullanıcı bazlı oturumlar ve daha ince izin kontrolü mümkün.
+**Why:** Current system uses API key + License key dual system. JWT enables user-based sessions and finer permission control.
 
-**Yapılacaklar:**
-- `PyJWT` bağımlılığı ekle
-- `/api/auth/login` ve `/api/auth/refresh` endpoint'leri
-- Kısa ömürlü access token (15 dk) + uzun ömürlü refresh token
-- Mevcut API key sistemini kaldırma (geriye dönük uyumluluk için aşamalı)
+**Action items:**
+- Add `PyJWT` dependency
+- `/api/auth/login` and `/api/auth/refresh` endpoints
+- Short-lived access token (15 min) + long-lived refresh token
+- Phased removal of current API key system (for backward compatibility)
 
 ---
 
 ### 6. A/B Testing Framework
 
-**Neden:** Hangi widget'ın hangi kullanıcı grubunda daha iyi performans gösterdiği bilinmiyor.
+**Why:** Unknown which widget performs better for which user group.
 
-**Yapılacaklar:**
-- `experiments` Firestore koleksiyonu ekle
-- Widget'lara `experiment_id` ve `variant` alanı ekle
-- `/api/experiments` endpoint'leri (oluştur, sonuç gör)
-- Flutter SDK'ya deney katılım ve sonuç gönderme
-
----
-
-### 7. Kullanıcı Segmentasyonu
-
-**Neden:** Tüm kullanıcılar aynı widget'ları görüyor. Segmente özel widget'lar çok daha yüksek dönüşüm sağlar.
-
-**Yapılacaklar:**
-- Widget tanımına `target_segments` alanı ekle
-- Segment kriterleri: platform, dil, uygulama versiyonu, özel etiketler
-- Flutter SDK'ya segment metadata gönderme
-- Trigger engine'e segment filtresi ekle
+**Action items:**
+- Add `experiments` Firestore collection
+- Add `experiment_id` and `variant` fields to widgets
+- `/api/experiments` endpoints (create, view results)
+- Experiment participation and result reporting in Flutter SDK
 
 ---
 
-### 8. Widget Zamanlama
+### 7. User Segmentation
 
-**Neden:** Belirli saatlerde veya tarih aralıklarında gösterilmesi gereken widget'lar mevcut trigger sistemiyle yönetilemez.
+**Why:** All users see the same widgets. Segment-specific widgets yield much higher conversion.
 
-**Yapılacaklar:**
-- Widget'a `show_from`, `show_until`, `show_hours` (örn. 08:00–20:00) alanları ekle
-- Trigger engine'e zaman bazlı condition ekle
-- Web dashboard'da takvim görünümü ile zamanlama
-
----
-
-### 9. Streaming AI Yanıtı
-
-**Neden:** Gemini içerik üretimi uzun sürebiliyor; kullanıcı sonucu bekliyor.
-
-**Yapılacaklar:**
-- `/api/ai/generate-content` endpoint'ine SSE (Server-Sent Events) desteği ekle
-- Web dashboard'da stream'i anlık göster
-- Flutter SDK'da stream yanıtını işle
+**Action items:**
+- Add `target_segments` field to widget definition
+- Segment criteria: platform, language, app version, custom tags
+- Send segment metadata from Flutter SDK
+- Add segment filter to trigger engine
 
 ---
 
-## Düşük Öncelik
+### 8. Widget Scheduling
+
+**Why:** Widgets that need to be shown at specific times or date ranges cannot be managed with the current trigger system.
+
+**Action items:**
+- Add `show_from`, `show_until`, `show_hours` (e.g. 08:00-20:00) fields to widgets
+- Add time-based condition to trigger engine
+- Calendar view scheduling in the web dashboard
+
+---
+
+### 9. Streaming AI Response
+
+**Why:** Gemini content generation can take long; the user waits for the result.
+
+**Action items:**
+- Add SSE (Server-Sent Events) support to `/api/ai/generate-content` endpoint
+- Show stream in real-time on web dashboard
+- Handle stream response in Flutter SDK
+
+---
+
+## Low Priority
 
 ### 10. React Native SDK
 
-**Neden:** Flutter SDK mevcut ama React Native pazarı da büyük.
+**Why:** Flutter SDK exists but the React Native market is also large.
 
-**Yapılacaklar:**
-- `react-native-intyx-widget` paketi oluştur
-- Aynı REST API'yi kullanan JSON-driven rendering
-- npm'e yayınla
+**Action items:**
+- Create `react-native-intyx-widget` package
+- JSON-driven rendering using the same REST API
+- Publish to npm
 
 ---
 
 ### 11. Kubernetes Manifests
 
-**Neden:** Şu an sadece Dockerfile ve Railway/Render config var. Kurumsal müşteriler k8s ister.
+**Why:** Currently only Dockerfile and Railway/Render config exist. Enterprise customers expect k8s.
 
-**Yapılacaklar:**
-- `k8s/` klasörü oluştur
-- Deployment, Service, Ingress, ConfigMap, Secret manifest'leri
+**Action items:**
+- Create `k8s/` directory
+- Deployment, Service, Ingress, ConfigMap, Secret manifests
 - Horizontal Pod Autoscaler (HPA) config
-- Helm chart (opsiyonel)
+- Helm chart (optional)
 
 ---
 
 ### 12. Monitoring & Observability
 
-**Neden:** Production'da neler olduğu görülmüyor (Sentry opsiyonel olarak eklenmiş ama yeterli değil).
+**Why:** No visibility into what's happening in production (Sentry is optionally added but not sufficient).
 
-**Yapılacaklar:**
-- Prometheus metrics endpoint (`/metrics`) ekle: request sayısı, latency, hata oranı
-- Grafana dashboard şablonu hazırla
+**Action items:**
+- Add Prometheus metrics endpoint (`/metrics`): request count, latency, error rate
+- Prepare Grafana dashboard template
 - Structured logging (JSON format, log level)
 - Uptime monitoring (Better Uptime / UptimeRobot)
 
 ---
 
-### 13. Kullanım Raporu E-postası
+### 13. Usage Report Email
 
-**Neden:** Müşteriler aylık ne kadar widget görüntülendiğini görmek ister.
+**Why:** Customers want to see how many widgets were displayed monthly.
 
-**Yapılacaklar:**
-- Aylık kullanım özeti e-postası (Resend / SendGrid)
-- `/api/usage/report` endpoint'i
-- Lisans planı kullanım yüzdesi gösterimi
+**Action items:**
+- Monthly usage summary email (Resend / SendGrid)
+- `/api/usage/report` endpoint
+- License plan usage percentage display
 
 ---
 
-### 14. API Versiyonlama
+### 14. API Versioning
 
-**Neden:** API değişikliklerinde mevcut istemciler bozulabilir. Versiyon stratejisi yok.
+**Why:** Existing clients can break on API changes. No versioning strategy.
 
-**Yapılacaklar:**
-- URL prefix: `/api/v1/` → `/api/v2/`
-- Deprecation header'ları
-- Sürüm geçiş rehberi dokümanı
+**Action items:**
+- URL prefix: `/api/v1/` -> `/api/v2/`
+- Deprecation headers
+- Version migration guide document
 
 ---
 
 ### 15. Dark Mode (Web Dashboard)
 
-**Neden:** Web dashboard'da dark mode yok. Geliştirici hedef kitlesi dark mode bekler.
+**Why:** No dark mode in web dashboard. Developer target audience expects dark mode.
 
-**Yapılacaklar:**
-- Tailwind `dark:` class'ları veya CSS değişkenleri
-- Sistem tercihini otomatik algıla (`prefers-color-scheme`)
-- Manuel toggle (Navbar'da)
-
----
-
-### 16. i18n / Çoklu Dil Desteği
-
-**Neden:** Proje Türkçe dokümanlı ama widget içerikleri İngilizce. Global pazara açılmak için i18n şart.
-
-**Yapılacaklar:**
-- `react-i18next` ile web dashboard çevirisi
-- Widget içeriklerinde `locale` parametresi
-- Flutter SDK'da `locale` ile içerik getirme
-- TR ve EN başlangıç çevirileri
+**Action items:**
+- Tailwind `dark:` classes or CSS variables
+- Auto-detect system preference (`prefers-color-scheme`)
+- Manual toggle (in Navbar)
 
 ---
 
-## Öncelik Özeti
+### 16. i18n / Multi-Language Support
 
-| # | Geliştirme | Öncelik | Etki | Zorluk |
+**Why:** Project has Turkish docs but widget content is in English. i18n is essential for going global.
+
+**Action items:**
+- Web dashboard translation with `react-i18next`
+- `locale` parameter in widget content
+- Fetch content by `locale` in Flutter SDK
+- Initial TR and EN translations
+
+---
+
+## Priority Summary
+
+| # | Improvement | Priority | Impact | Difficulty |
 |---|---|---|---|---|
-| 1 | Web testleri ekle | Yüksek | Kod güvenilirliği | Düşük |
-| 2 | TypeScript geçişi | Yüksek | Bakım kolaylığı | Orta |
-| 3 | Analytics dashboard | Yüksek | Kullanıcı değeri | Orta |
-| 4 | Redis cache | Orta | Performans | Düşük |
-| 5 | JWT auth | Orta | Güvenlik | Orta |
-| 6 | A/B testing | Orta | İş değeri | Yüksek |
-| 7 | Kullanıcı segmentasyonu | Orta | İş değeri | Orta |
-| 8 | Widget zamanlama | Orta | Özellik | Düşük |
-| 9 | Streaming AI | Orta | UX | Orta |
-| 10 | React Native SDK | Düşük | Pazar | Yüksek |
-| 11 | Kubernetes | Düşük | Altyapı | Yüksek |
-| 12 | Monitoring | Düşük | Operasyon | Orta |
-| 13 | Kullanım raporu | Düşük | Müşteri değeri | Düşük |
-| 14 | API versiyonlama | Düşük | Bakım | Düşük |
-| 15 | Dark mode | Düşük | UX | Düşük |
-| 16 | i18n | Düşük | Global pazar | Orta |
+| 1 | Add web tests | High | Code reliability | Low |
+| 2 | TypeScript migration | High | Maintainability | Medium |
+| 3 | Analytics dashboard | High | User value | Medium |
+| 4 | Redis cache | Medium | Performance | Low |
+| 5 | JWT auth | Medium | Security | Medium |
+| 6 | A/B testing | Medium | Business value | High |
+| 7 | User segmentation | Medium | Business value | Medium |
+| 8 | Widget scheduling | Medium | Feature | Low |
+| 9 | Streaming AI | Medium | UX | Medium |
+| 10 | React Native SDK | Low | Market | High |
+| 11 | Kubernetes | Low | Infrastructure | High |
+| 12 | Monitoring | Low | Operations | Medium |
+| 13 | Usage report | Low | Customer value | Low |
+| 14 | API versioning | Low | Maintenance | Low |
+| 15 | Dark mode | Low | UX | Low |
+| 16 | i18n | Low | Global market | Medium |
