@@ -300,7 +300,27 @@ def deactivate_license_by_paddle_customer(customer_id: str) -> bool:
     return found
 
 
-def count_widgets_for_license(api_key: str) -> int:
+def get_license_by_email(email: str, plan: str) -> dict[str, Any] | None:
+    """Return the first active license matching *email* and *plan*, or None."""
+    if not email:
+        return None
+    db = get_db()
+    docs = (
+        db.collection("licenses")
+        .where("email", "==", email.lower().strip())
+        .where("plan", "==", plan)
+        .where("active", "==", True)
+        .limit(1)
+        .stream()
+    )
+    for doc in docs:
+        data = doc.to_dict()
+        data.setdefault("api_key", doc.id)
+        return data
+    return None
+
+
+
     """Count widgets created by a specific license key."""
     db = get_db()
     docs = db.collection("widgets").where("license_key", "==", api_key).stream()
@@ -409,8 +429,9 @@ def increment_api_call(license_key: str, user_id: str | None = None) -> None:
 def get_usage(license_key: str) -> dict[str, Any]:
     """Return this month's usage stats for *license_key*.
 
-    Returns a dict with ``api_calls`` (int) and ``unique_users`` (list[str]).
-    Both fields reset to zero/empty at the start of each calendar month.
+    Returns a dict with ``api_calls`` (int), ``ai_calls`` (int) and
+    ``unique_users`` (list[str]).  All fields reset at the start of each
+    calendar month.
     """
     db = get_db()
     doc = db.collection("usage").document(license_key).get()
@@ -420,10 +441,65 @@ def get_usage(license_key: str) -> dict[str, Any]:
         if data.get("month") == current_month:
             return {
                 "api_calls": data.get("api_calls", 0),
+                "ai_calls": data.get("ai_calls", 0),
                 "unique_users": data.get("unique_users", []),
                 "month": current_month,
             }
-    return {"api_calls": 0, "unique_users": [], "month": current_month}
+    return {"api_calls": 0, "ai_calls": 0, "unique_users": [], "month": current_month}
+
+
+def try_consume_ai_call(license_key: str, monthly_limit: int) -> bool:
+    """Atomically check the monthly AI call quota and consume one call.
+
+    Returns True if the call is allowed (quota not exceeded) and the
+    counter was incremented.  Returns False if the monthly limit has been
+    reached — in that case the counter is NOT incremented.
+
+    Pass ``monthly_limit=-1`` for unlimited plans (always returns True,
+    but the counter is still tracked for analytics).
+    """
+    db = get_db()
+    doc_ref = db.collection("usage").document(license_key)
+    current_month = _current_month()
+    result: list[bool] = [False]
+
+    @firestore.transactional
+    def _update(transaction):
+        snapshot = doc_ref.get(transaction=transaction)
+        if snapshot.exists:
+            data = snapshot.to_dict()
+            if data.get("month") != current_month:
+                # New month — reset AI call counter but keep other fields
+                transaction.update(doc_ref, {
+                    "month": current_month,
+                    "ai_calls": 1,
+                    "api_calls": 0,
+                    "unique_users": [],
+                    "updated_at": time.time(),
+                })
+                result[0] = True
+            else:
+                ai_calls = data.get("ai_calls", 0)
+                if monthly_limit == -1 or ai_calls < monthly_limit:
+                    transaction.update(doc_ref, {
+                        "ai_calls": firestore.Increment(1),
+                        "updated_at": time.time(),
+                    })
+                    result[0] = True
+                # else: limit reached, result stays False
+        else:
+            # First call ever for this license
+            transaction.set(doc_ref, {
+                "month": current_month,
+                "api_calls": 0,
+                "ai_calls": 1,
+                "unique_users": [],
+                "updated_at": time.time(),
+            })
+            result[0] = True
+
+    _update(db.transaction())
+    return result[0]
 
 
 # --- Email Signup Operations ---

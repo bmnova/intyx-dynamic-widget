@@ -57,10 +57,25 @@ def create_license():
     """
     data = request.get_json() or {}
     plan = data.get("plan")
-    email = data.get("email", "")
+    email = (data.get("email") or "").strip().lower()
 
     if plan not in ("starter", "pro", "enterprise"):
         return jsonify({"error": "Invalid plan"}), 400
+
+    # Starter plan requires an email and is limited to one active key per address.
+    # This prevents free-tier abuse (unlimited key creation → unlimited Gemini calls).
+    if plan == "starter":
+        if not email:
+            return jsonify({"error": "Email is required for the free Starter plan"}), 400
+
+        existing = fb.get_license_by_email(email, "starter")
+        if existing:
+            # Return the existing key so the user can log back in
+            return jsonify({
+                "api_key": existing["api_key"],
+                "plan": "starter",
+                "existing": True,
+            }), 200
 
     api_key = f"intyx_{plan}_{uuid.uuid4().hex[:16]}"
 
@@ -71,6 +86,7 @@ def create_license():
         "active": True,
         "widget_limit": {"starter": 3, "pro": 10, "enterprise": -1}[plan],
         "mau_limit": {"starter": 1000, "pro": 50000, "enterprise": -1}[plan],
+        "ai_calls_limit": {"starter": 50, "pro": 500, "enterprise": -1}[plan],
     }
     fb.create_license(api_key, doc)
 
@@ -210,6 +226,8 @@ def get_license_usage():
     mau_limit = lic.get("mau_limit", -1)
     mau_used = len(usage.get("unique_users", []))
     api_calls_used = usage.get("api_calls", 0)
+    ai_calls_used = usage.get("ai_calls", 0)
+    ai_calls_limit = lic.get("ai_calls_limit", 50)
 
     # First day of next month = reset date
     today = date.today()
@@ -228,6 +246,11 @@ def get_license_usage():
         "api_calls": {
             "used": api_calls_used,
             "limit": -1,  # No hard cap on evaluate calls; MAU is the enforced limit
+        },
+        "ai_calls": {
+            "used": ai_calls_used,
+            "limit": ai_calls_limit,
+            "percent": _pct(ai_calls_used, ai_calls_limit),
         },
         "mau": {
             "used": mau_used,

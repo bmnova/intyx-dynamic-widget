@@ -84,6 +84,9 @@ export default function Pricing() {
   const [toast, setToast] = useState<ToastState | null>(null);
   const [paddleReady, setPaddleReady] = useState(false);
   const [paddleProducts, setPaddleProducts] = useState<Record<string, PaddleProduct>>({});
+  const [emailModal, setEmailModal] = useState(false);
+  const [emailInput, setEmailInput] = useState('');
+  const [emailError, setEmailError] = useState('');
 
   useEffect(() => {
     if (!hasPaddle) return;
@@ -120,14 +123,35 @@ export default function Pricing() {
     navigate('/dashboard');
   };
 
+  const handleStarterSubmit = async () => {
+    const email = emailInput.trim().toLowerCase();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError('Please enter a valid email address.');
+      return;
+    }
+    setEmailModal(false);
+    setEmailError('');
+    setLoading('starter');
+    try {
+      await createLicenseAndRedirect('starter', email);
+    } catch (err) {
+      setToast({ type: 'error', message: (err as Error).message || 'Something went wrong. Please try again.' });
+    } finally {
+      setLoading(null);
+    }
+  };
+
   const handlePurchase = async (planId: string) => {
+    if (planId === 'starter') {
+      setEmailInput('');
+      setEmailError('');
+      setEmailModal(true);
+      return;
+    }
+
     setLoading(planId);
 
     try {
-      if (planId === 'starter') {
-        await createLicenseAndRedirect(planId);
-        return;
-      }
 
       if (hasPaddle && paddleReady) {
         const result = await paddle.openCheckout({
@@ -235,6 +259,54 @@ export default function Pricing() {
           message={toast.message}
           onClose={() => setToast(null)}
         />
+      )}
+
+      {emailModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="email-modal-title"
+          style={styles.modalOverlay}
+          onClick={(e) => { if (e.target === e.currentTarget) setEmailModal(false); }}
+        >
+          <div style={styles.modal}>
+            <h2 id="email-modal-title" style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
+              Start Free
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 20 }}>
+              Enter your email to create your free account. One free plan per email address.
+            </p>
+            <input
+              type="email"
+              autoFocus
+              placeholder="you@example.com"
+              value={emailInput}
+              onChange={(e) => { setEmailInput(e.target.value); setEmailError(''); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleStarterSubmit(); }}
+              style={{
+                ...styles.emailInput,
+                borderColor: emailError ? '#ef4444' : 'var(--border)',
+              }}
+            />
+            {emailError && (
+              <p role="alert" style={{ color: '#ef4444', fontSize: 13, marginTop: 6 }}>{emailError}</p>
+            )}
+            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+              <button
+                style={{ ...styles.btn, ...styles.btnDefault, flex: 1 }}
+                onClick={() => setEmailModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                style={{ ...styles.btn, ...styles.btnPopular, flex: 2 }}
+                onClick={handleStarterSubmit}
+              >
+                Get Free Key
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );
@@ -356,5 +428,34 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: 40,
     maxWidth: 600,
     margin: '40px auto 0',
+  },
+  modalOverlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+  modal: {
+    background: 'var(--bg-card)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius)',
+    padding: 32,
+    width: '100%',
+    maxWidth: 420,
+    margin: '0 16px',
+  },
+  emailInput: {
+    width: '100%',
+    padding: '10px 14px',
+    fontSize: 15,
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--border)',
+    background: 'var(--bg)',
+    color: 'var(--text)',
+    outline: 'none',
+    boxSizing: 'border-box' as const,
   },
 };
