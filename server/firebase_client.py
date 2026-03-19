@@ -300,7 +300,27 @@ def deactivate_license_by_paddle_customer(customer_id: str) -> bool:
     return found
 
 
-def count_widgets_for_license(api_key: str) -> int:
+def get_license_by_email(email: str, plan: str) -> dict[str, Any] | None:
+    """Return the first active license matching *email* and *plan*, or None."""
+    if not email:
+        return None
+    db = get_db()
+    docs = (
+        db.collection("licenses")
+        .where("email", "==", email.lower().strip())
+        .where("plan", "==", plan)
+        .where("active", "==", True)
+        .limit(1)
+        .stream()
+    )
+    for doc in docs:
+        data = doc.to_dict()
+        data.setdefault("api_key", doc.id)
+        return data
+    return None
+
+
+
     """Count widgets created by a specific license key."""
     db = get_db()
     docs = db.collection("widgets").where("license_key", "==", api_key).stream()

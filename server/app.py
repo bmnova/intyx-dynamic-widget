@@ -15,6 +15,7 @@ from server.config import (
     HOST,
     PORT,
     RATE_LIMIT_DEFAULT,
+    RATE_LIMIT_LICENSE_CREATE,
     SENTRY_DSN,
     SERVER_API_KEY,
     validate_config,
@@ -170,6 +171,10 @@ def create_app() -> Flask:
     # Apply stricter rate limit to AI endpoints
     from server.config import RATE_LIMIT_AI
     limiter.limit(RATE_LIMIT_AI)(ai_bp)
+
+    # Apply per-IP rate limit to license creation (slow down key farming)
+    from server.routes.licenses import create_license
+    limiter.limit(RATE_LIMIT_LICENSE_CREATE)(create_license)
 
     # Health check
     @app.route("/api/health")

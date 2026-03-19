@@ -57,10 +57,25 @@ def create_license():
     """
     data = request.get_json() or {}
     plan = data.get("plan")
-    email = data.get("email", "")
+    email = (data.get("email") or "").strip().lower()
 
     if plan not in ("starter", "pro", "enterprise"):
         return jsonify({"error": "Invalid plan"}), 400
+
+    # Starter plan requires an email and is limited to one active key per address.
+    # This prevents free-tier abuse (unlimited key creation → unlimited Gemini calls).
+    if plan == "starter":
+        if not email:
+            return jsonify({"error": "Email is required for the free Starter plan"}), 400
+
+        existing = fb.get_license_by_email(email, "starter")
+        if existing:
+            # Return the existing key so the user can log back in
+            return jsonify({
+                "api_key": existing["api_key"],
+                "plan": "starter",
+                "existing": True,
+            }), 200
 
     api_key = f"intyx_{plan}_{uuid.uuid4().hex[:16]}"
 

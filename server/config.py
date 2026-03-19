@@ -47,6 +47,8 @@ PORT = int(os.environ.get("PORT", "8080"))
 # Rate limiting
 RATE_LIMIT_DEFAULT = os.environ.get("RATE_LIMIT_DEFAULT", "200 per hour")
 RATE_LIMIT_AI = os.environ.get("RATE_LIMIT_AI", "30 per minute")
+# Stricter limit on free license creation to slow down scripted key farming
+RATE_LIMIT_LICENSE_CREATE = os.environ.get("RATE_LIMIT_LICENSE_CREATE", "10 per hour")
 
 # API key for server endpoints (set to empty string to disable auth)
 SERVER_API_KEY = os.environ.get("INTYX_SERVER_API_KEY", "")
